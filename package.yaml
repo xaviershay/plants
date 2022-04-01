@@ -35,6 +35,10 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - plants
+    - lens
+    - mtl
+    - unordered-containers
+    - parsec
 
 tests:
   plants-test:
