@@ -1,37 +1,67 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Plants.LSystem.Types where
 
+import Control.Lens (makeLenses)
 import Data.List (intercalate)
 import Data.String (IsString(..))
 
-data Term2 = Sum | Product | Fraction | Exponent
-  deriving (Show, Eq)
+-- A module is the fundamental unit of an LSystem. The parameter type is
+-- variable because modules are used in different contexts whether as part of
+-- the definition of the system or when it is being executed.
+data Module a = Module
+  { _moduleSymbol :: String
+  , _moduleParams :: [a]
+  } deriving (Eq)
 
-data Expr =
-  ExprConst Double
+instance Show a => Show (Module a) where
+  show (Module {_moduleSymbol = s, _moduleParams = ps}) =
+    s <>
+    if null ps
+      then ""
+      else show ps
+
+makeLenses ''Module
+
+-- A fixed module contains actual values for its parameters, and is the
+-- building block for the axiom of a system.
+type ModuleFixed = Module Double
+
+-- A module pattern is used when defining match rules, where each parameter can
+-- be represented by a variable name.
+type ModulePattern = Module String
+
+-- A module pattern is used to define a match replacement. Rather than just
+-- variable names, it can contain complete expressions.
+type ModuleExpr = Module Expr
+
+-- Expr is a simple mathematical expression involving constants, variables, and
+-- operators.
+data Expr
+  = ExprConst Double
   | ExprVar String
-  | ExprOp2 Term2 Expr Expr
+  | ExprOp2 Term2
+            Expr
+            Expr
   deriving (Show, Eq)
 
-data PLetter a = PLetter {
-  letterSymbol :: String,
-  letterParams :: [a]
-} deriving (Eq)
+data Term2
+  = Sum
+  | Product
+  | Fraction
+  | Exponent
+  deriving (Show, Eq)
 
-instance Show a => Show (PLetter a) where
-  show (PLetter { letterSymbol = s, letterParams = ps }) = s <> if null ps then "" else show ps
-
-type Letter = PLetter Double
-type LetterExpr = PLetter Expr
-type LetterPattern = PLetter String
-
-data LWord a = LWord [a]
+-- MWord is a newtype wrapper around a list of modules
+data MWord a =
+  MWord [a]
   deriving (Eq)
 
-instance Semigroup (LWord x) where
-  (LWord a) <> (LWord b) = LWord $ a <> b
+instance Semigroup (MWord x) where
+  (MWord a) <> (MWord b) = MWord $ a <> b
 
-instance Monoid (LWord a) where
-  mempty = LWord []
+instance Monoid (MWord a) where
+  mempty = MWord []
 
-instance Show a => Show (LWord a) where
-  show (LWord l) = intercalate " " $ map show l
+instance Show a => Show (MWord a) where
+  show (MWord l) = intercalate " " $ map show l

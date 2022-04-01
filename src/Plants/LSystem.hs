@@ -23,9 +23,9 @@ instance Monoid Env where
   mempty = Env mempty
 
 data MatchRule = MatchRule {
-  _ruleLetter :: LetterPattern,
-  _ruleLetterPre :: Maybe LetterPattern,
-  _ruleLetterPost :: Maybe LetterPattern,
+  _ruleLetter :: ModulePattern,
+  _ruleLetterPre :: Maybe ModulePattern,
+  _ruleLetterPost :: Maybe ModulePattern,
   _ruleGuard :: MatchGuard
 } deriving (Show)
 
@@ -44,25 +44,25 @@ makeLenses ''MatchRule
 instance IsString MatchRule where
   fromString x = makeRule (parsePatternUnsafe x)
 
-instance IsString (LWord LetterExpr) where
+instance IsString (MWord ModuleExpr) where
   fromString x = parseWordExprUnsafe x
 
-instance IsString (LWord Letter) where
+instance IsString (MWord ModuleFixed) where
   fromString x = parseWordUnsafe x
 
 data Production = Production {
   _prodRule :: MatchRule,
-  _prodReplacement :: LWord LetterExpr
+  _prodReplacement :: MWord ModuleExpr
 } deriving (Show)
 
 makeLenses ''Production
 
 data LSystem = LSystem {
-  _lsysAxiom :: LWord Letter,
+  _lsysAxiom :: MWord ModuleFixed,
   _lsysN :: Int,
   _lsysTheta :: Double,
   _lsysProductions :: [Production],
-  _lsysIgnore :: [Letter],
+  _lsysIgnore :: [ModuleFixed],
   _lsysDefines :: Env,
   _lsysSeed :: Int
 }
@@ -81,7 +81,7 @@ emptyLSystem = LSystem {
   _lsysSeed = 0
 }
 
-axiom :: LWord Letter -> LSystemBuilder
+axiom :: MWord ModuleFixed -> LSystemBuilder
 axiom = assign lsysAxiom
 
 n :: Int -> LSystemBuilder
@@ -90,7 +90,7 @@ n = assign lsysN
 theta :: Double -> LSystemBuilder
 theta = assign lsysTheta
 
-productions :: [(MatchRule, LWord LetterExpr)] -> LSystemBuilder
+productions :: [(MatchRule, MWord ModuleExpr)] -> LSystemBuilder
 productions ps = do
   let x = map (\(a, b) -> Production {
     _prodRule = a,
