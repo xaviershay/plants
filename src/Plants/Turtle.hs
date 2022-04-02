@@ -20,12 +20,12 @@ import Control.Lens
   , use
   , view
   )
+import Control.Monad.RWS hiding (Product, Sum)
 import Control.Monad.State (State(..), evalState, get, gets, modify, runState)
-import Control.Monad.RWS hiding (Sum, Product)
 import Data.Maybe (fromMaybe)
+import Linear.Matrix ((!*!))
 import Linear.V3 (V3(..))
 import Linear.Vector ((^*))
-import Linear.Matrix ((!*!))
 
 type Point = V3 Double
 
@@ -38,9 +38,11 @@ data Instruction a
   deriving (Show)
 
 approxEq a b = approxZero $ b - a
+
 approxZero a = abs a < epsilon
 
 approxEqV3 a b = foldl (&&) True . fmap approxZero $ (b - a)
+
 epsilon = 10.0 ** (-10)
 
 instance Eq (Instruction Point) where
@@ -49,6 +51,7 @@ instance Eq (Instruction Point) where
   ChangeColor x == ChangeColor y = x == y
   StrokeWidth a == StrokeWidth b = approxEq a b
   Fill x == Fill y = x == y
+  a == b = False
 
 data TurtleState = TurtleState
   { _turtleOrientation :: V3 Point
@@ -62,10 +65,11 @@ makeLenses ''TurtleState
 
 initialTurtle =
   TurtleState
-  -- We're making trees here, most of the time we want them to grow up, so
-  -- let's start by pointing directly along the Y-axis.
-  --rotateM = (rotateU $ pi / 2.0) !*! V3 (V3 1.0 0.0 0.0) (V3 0.0 1.0 0.0) (V3 0.0 0.0 1.0),
-    { _turtleOrientation = V3 (V3 1 0 0) (V3 0 1 0) (V3 0 0 1)
+    -- We're making trees here, most of the time we want them to grow up, so
+    -- let's start by pointing directly along the Y-axis.
+    { _turtleOrientation =
+        (rotateU $ pi / 2.0) !*!
+        V3 (V3 1.0 0.0 0.0) (V3 0.0 1.0 0.0) (V3 0.0 0.0 1.0)
     , _turtlePosition = V3 0 0 0
     , _turtleColor = 0
     , _turtleStrokeWidth = 1
@@ -93,27 +97,28 @@ letterToInstruction 'F' a = moveTurtle a MovePenDown
 letterToInstruction 'f' a = moveTurtle a MovePenUp
 letterToInstruction '+' a = rotateTurtle rotateU a
 letterToInstruction '-' a = rotateTurtle (rotateU . negate) a
-letterToInstruction x a = error $ "unknown instruction: " <> show x <> " / " <> show a
+letterToInstruction x a =
+  error $ "unknown instruction: " <> show x <> " / " <> show a
 
 moveTurtle a i = do
   h <- use $ peek . turtleHeading
   p <- use $ peek . turtlePosition
-  let h' = h ^* fromMaybe 1 a
-  assign (peek . turtlePosition) h'
-  return [i h']
+  let p' = p + h ^* fromMaybe 1 a
+  assign (peek . turtlePosition) p'
+  return [i p']
 
 rotateTurtle r a = do
   theta <- askTheta
-  modifying (peek . turtleOrientation) (\m ->  m !*! r (toRadians $ theta * fromMaybe 1 a))
+  modifying
+    (peek . turtleOrientation)
+    (\m -> m !*! r (toRadians $ theta * fromMaybe 1 a))
   return mempty
 
 traceState :: TurtleM -> TurtleM
 traceState m = do
   r <- m
   o <- use $ peek . turtleOrientation
-
   traceM $ "o: " <> show o
-
   return r
 
 moduleToInstruction :: LSystem -> ModuleFixed -> TurtleM
@@ -127,25 +132,15 @@ interpret = interpretWith initialTurtle
 
 interpretWith :: TurtleState -> LSystem -> [Instruction Point]
 interpretWith state system =
-  let
-    MWord axiom = view lsysAxiom system
-    theta = view lsysTheta system 
-  in concat $
+  let MWord axiom = view lsysAxiom system
+      theta = view lsysTheta system
+   in concat $
       fst $ evalRWS (mapM (moduleToInstruction system) axiom) theta (state, [])
 
-rotateU a = V3
-  (V3 (cos a) (sin a) 0)
-  (V3 ((-1) * (sin a)) (cos a) 0)
-  (V3 0 0 1)
+rotateU a = V3 (V3 (cos a) (sin a) 0) (V3 ((-1) * (sin a)) (cos a) 0) (V3 0 0 1)
 
-rotateL a = V3
-  (V3 (cos a) 0 (sin a * (-1)))
-  (V3 0 1 0)
-  (V3 (sin a) 0 (cos a))
+rotateL a = V3 (V3 (cos a) 0 (sin a * (-1))) (V3 0 1 0) (V3 (sin a) 0 (cos a))
 
-rotateH a = V3
-  (V3 1 0 0)
-  (V3 0 (cos a) (sin a * (-1)))
-  (V3 0 (sin a) (cos a))
+rotateH a = V3 (V3 1 0 0) (V3 0 (cos a) (sin a * (-1))) (V3 0 (sin a) (cos a))
 
 askTheta = ask

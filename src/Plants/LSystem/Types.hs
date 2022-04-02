@@ -110,6 +110,6 @@ data LSystem = LSystem {
   _lsysIgnore :: [ModuleFixed],
   _lsysDefines :: Env,
   _lsysSeed :: Int
-}
+} deriving (Show)
 
 makeLenses ''LSystem

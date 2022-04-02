@@ -129,8 +129,7 @@ pathsToSVG settings paths = renderSvg svgDoc
               forM_ paths $ \path -> do
                 S.path !
                   A.style
-                    (S.toValue $
-                     "stroke-linecap:square;" <> toStyle settings path) !
+                    (S.toValue $ toStyle settings path) !
                   A.d
                     (mkPath $ do
                        let (V2 x y) = view pathStart path
@@ -165,6 +164,7 @@ toStyle settings path =
     , showFullPrecision
         (view pathStrokeWidth path * (view settingStrokeWidth settings)) <>
       "px")
+  , ("stroke-linecap", "square")
   ]
   where
     cs = view settingColors settings
@@ -174,13 +174,11 @@ pathAllPoints :: SVGPath -> [ProjectedPoint]
 pathAllPoints path = view pathStart path : view pathPoints path
 
 bounds paths =
-  let (mn, mx) = foldl (\(
-          (V2 minX minY),
-          (V2 maxX maxY)
-        ) pos -> let
-          (V2 x y) = pos
-        in (
-          V2 (min minX x) (min minY y),
-          V2 (max maxX x) (max maxY y)
-         )) (V2 0 0, V2 0 0) (concatMap pathAllPoints paths)
-      in (mn, mx)
+  let (mn, mx) =
+        foldl
+          (\((V2 minX minY), (V2 maxX maxY)) pos ->
+             let (V2 x y) = pos
+              in (V2 (min minX x) (min minY y), V2 (max maxX x) (max maxY y)))
+          (V2 0 0, V2 0 0)
+          (concatMap pathAllPoints paths)
+   in (mn, mx)
