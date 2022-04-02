@@ -1,7 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Plants.LSystem (LSystem, lsystem, axiom, productions, theta, n, run) where
+module Plants.LSystem (module Plants.LSystem, module Plants.LSystem.Types, module Plants.LSystem.Eval) where
 
 import Plants.LSystem.Parser
 import Plants.LSystem.Types

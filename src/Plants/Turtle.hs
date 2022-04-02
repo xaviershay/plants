@@ -32,7 +32,7 @@ data Instruction a
   | ChangeColor Int
   | StrokeWidth Double
   | Fill Int
-  deriving (Show)
+  deriving (Show, Eq)
 
 data TurtleState = TurtleState
   { _turtleOrientation :: V3 Point
@@ -73,12 +73,16 @@ turtleHeading f parent =
     getHeading (V3 h _ _) = h
 
 letterToInstruction :: Char -> Maybe Double -> TurtleM
-letterToInstruction 'F' a = do
+letterToInstruction 'F' a = moveTurtle a MovePenDown
+letterToInstruction 'f' a = moveTurtle a MovePenUp
+letterToInstruction x a = error $ "unknown instruction: " <> show x <> " / " <> show a
+
+moveTurtle a i = do
   h <- use $ peek . turtleHeading
   p <- use $ peek . turtlePosition
   let h' = h ^* fromMaybe 1 a
   assign (peek . turtlePosition) h'
-  return [MovePenDown h']
+  return [i h']
 
 moduleToInstruction :: LSystem -> ModuleFixed -> TurtleM
 moduleToInstruction system m =
@@ -87,7 +91,10 @@ moduleToInstruction system m =
    in letterToInstruction firstLetter firstParam
 
 interpret :: LSystem -> [Instruction Point]
-interpret system =
+interpret = interpretWith initialTurtle
+
+interpretWith :: TurtleState -> LSystem -> [Instruction Point]
+interpretWith state system =
   let MWord axiom = view lsysAxiom system
    in concat $
-      evalState (mapM (moduleToInstruction system) axiom) (initialTurtle, [])
+      evalState (mapM (moduleToInstruction system) axiom) (state, [])
