@@ -5,6 +5,7 @@ module Plants.LSystem.Types where
 import Control.Lens (makeLenses)
 import Data.List (intercalate)
 import Data.String (IsString(..))
+import qualified Data.HashMap.Strict as M
 
 -- A module is the fundamental unit of an LSystem. The parameter type is
 -- variable because modules are used in different contexts whether as part of
@@ -65,3 +66,50 @@ instance Monoid (MWord a) where
 
 instance Show a => Show (MWord a) where
   show (MWord l) = intercalate " " $ map show l
+
+data Env = Env (M.HashMap String Expr)
+  deriving (Show)
+
+instance Semigroup Env where
+  Env a <> Env b = Env (a <> b)
+
+instance Monoid Env where
+  mempty = Env mempty
+
+data MatchRule = MatchRule {
+  _ruleLetter :: ModulePattern,
+  _ruleLetterPre :: Maybe ModulePattern,
+  _ruleLetterPost :: Maybe ModulePattern,
+  _ruleGuard :: MatchGuard
+} deriving (Show)
+
+makeRule pattern = MatchRule {
+  _ruleLetter = pattern,
+  _ruleLetterPre = Nothing,
+  _ruleLetterPost = Nothing,
+  _ruleGuard = MatchAll
+}
+
+data MatchGuard = MatchAll | MatchGuard String Expr Expr
+  deriving (Show, Eq)
+
+makeLenses ''MatchRule
+
+data Production = Production {
+  _prodRule :: MatchRule,
+  _prodReplacement :: MWord ModuleExpr
+} deriving (Show)
+
+makeLenses ''Production
+
+data LSystem = LSystem {
+  _lsysAxiom :: MWord ModuleFixed,
+  _lsysN :: Int,
+  _lsysTheta :: Double,
+  _lsysProductions :: [Production],
+  _lsysIgnore :: [ModuleFixed],
+  _lsysDefines :: Env,
+  _lsysSeed :: Int
+}
+
+makeLenses ''LSystem

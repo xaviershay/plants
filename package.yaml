@@ -39,6 +39,8 @@ executables:
     - mtl
     - unordered-containers
     - parsec
+    - random
+    - linear
 
 tests:
   plants-test:

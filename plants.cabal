@@ -28,6 +28,9 @@ library
       Lib
       Plants.LSystem
       Plants.LSystem.Parser
+      Plants.LSystem.Types
+      Plants.SVG
+      Plants.Turtle
       Systems.Geometric
   other-modules:
       Paths_plants
@@ -47,9 +50,11 @@ executable plants-exe
   build-depends:
       base >=4.7 && <5
     , lens
+    , linear
     , mtl
     , parsec
     , plants
+    , random
     , unordered-containers
   default-language: Haskell2010
 

@@ -1,45 +1,15 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Plants.LSystem (lsystem, axiom, productions, theta, n) where
+module Plants.LSystem (LSystem, lsystem, axiom, productions, theta, n) where
 
 import Plants.LSystem.Parser
 import Plants.LSystem.Types
+import Plants.LSystem.Eval
 
-import Control.Lens (makeLenses, assign, set)
+import Control.Lens (makeLenses, assign, set, view)
 import Control.Monad.State
 import Data.String (IsString(..))
-import qualified Data.HashMap.Strict as M
-
-
-
-data Env = Env (M.HashMap String Expr)
-  deriving (Show)
-
-instance Semigroup Env where
-  Env a <> Env b = Env (a <> b)
-
-instance Monoid Env where
-  mempty = Env mempty
-
-data MatchRule = MatchRule {
-  _ruleLetter :: ModulePattern,
-  _ruleLetterPre :: Maybe ModulePattern,
-  _ruleLetterPost :: Maybe ModulePattern,
-  _ruleGuard :: MatchGuard
-} deriving (Show)
-
-makeRule pattern = MatchRule {
-  _ruleLetter = pattern,
-  _ruleLetterPre = Nothing,
-  _ruleLetterPost = Nothing,
-  _ruleGuard = MatchAll
-}
-
-data MatchGuard = MatchAll | MatchGuard String Expr Expr
-  deriving (Show, Eq)
-
-makeLenses ''MatchRule
 
 instance IsString MatchRule where
   fromString x = makeRule (parsePatternUnsafe x)
@@ -49,25 +19,6 @@ instance IsString (MWord ModuleExpr) where
 
 instance IsString (MWord ModuleFixed) where
   fromString x = parseWordUnsafe x
-
-data Production = Production {
-  _prodRule :: MatchRule,
-  _prodReplacement :: MWord ModuleExpr
-} deriving (Show)
-
-makeLenses ''Production
-
-data LSystem = LSystem {
-  _lsysAxiom :: MWord ModuleFixed,
-  _lsysN :: Int,
-  _lsysTheta :: Double,
-  _lsysProductions :: [Production],
-  _lsysIgnore :: [ModuleFixed],
-  _lsysDefines :: Env,
-  _lsysSeed :: Int
-}
-
-makeLenses ''LSystem
 
 type LSystemBuilder = State LSystem ()
 
@@ -100,3 +51,4 @@ productions ps = do
 
 lsystem :: LSystemBuilder -> LSystem
 lsystem m = snd $ runState m emptyLSystem
+
