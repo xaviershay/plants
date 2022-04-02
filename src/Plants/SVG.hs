@@ -81,7 +81,7 @@ emptySVGSettings =
 
 default2d = emptySVGSettings
 
-turtleToSVGPaths :: SVGSettings -> [Instruction Point] -> [SVGPath]
+turtleToSVGPaths :: SVGSettings -> [Instruction] -> [SVGPath]
 turtleToSVGPaths settings is = snd $ execRWST f () (mkSVGPath (V2 0 0)) []
   where
     project = view settingProjection settings

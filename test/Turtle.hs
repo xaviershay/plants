@@ -58,5 +58,28 @@ test_interpret =
         , MovePenDown (V3 1 0 0)
         , Fill Nothing
         , MovePenDown (V3 2 0 0)
-        ] 
+        ]
+    , testTurtle "& F" [MovePenDown (V3 0 0 (-1))]
+    , testTurtle "&(3) F" [MovePenDown (V3 0 0 1)]
+    , testTurtle
+        "& F & F"
+        [MovePenDown (V3 0 0 (-1)), MovePenDown (V3 (-1) 0 (-1))]
+    , testTurtle "^ F" [MovePenDown (V3 0 0 1)]
+    , testTurtle "^(3) F" [MovePenDown (V3 0 0 (-1))]
+    , testTurtle "^ F ^ F" [MovePenDown (V3 0 0 1), MovePenDown (V3 (-1) 0 1)]
+    , testTurtle "\\ F" [MovePenDown (V3 1 0 0)]
+    , testTurtle "\\ & F" [MovePenDown (V3 0 (-1) 0)]
+    , testTurtle "\\ F + F" [MovePenDown (V3 1 0 0), MovePenDown (V3 1 0 (-1))]
+    , testTurtle "+ F \\ F" [MovePenDown (V3 0 1 0), MovePenDown (V3 0 2 0)]
+    , testTurtle "/ F" [MovePenDown (V3 1 0 0)]
+    , testTurtle "/ & F" [MovePenDown (V3 0 1 0)]
+    , testTurtle "/ F + F" [MovePenDown (V3 1 0 0), MovePenDown (V3 1 0 1)]
+    , testTurtle "+ F / F" [MovePenDown (V3 0 1 0), MovePenDown (V3 0 2 0)]
+    , testTurtle "+ &(0.5) / $ &(0.5) F" [MovePenDown (V3 0 0 (-1))]
+    , testTurtle "+ $ F" [MovePenDown (V3 0 1 0)]
+    , testTurtle "'" [ChangeColor 1]
+    , testTurtle "' '" [ChangeColor 1, ChangeColor 2]
+    , testTurtle "'(2)" [ChangeColor 2]
+    , testTurtle "!(0.8)" [StrokeWidth 0.8]
+    , testTurtle "!(0.8) !" [StrokeWidth 0.8, StrokeWidth 1]
     ]

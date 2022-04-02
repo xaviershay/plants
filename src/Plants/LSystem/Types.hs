@@ -3,9 +3,22 @@
 module Plants.LSystem.Types where
 
 import Control.Lens (makeLenses)
+import qualified Data.HashMap.Strict as M
 import Data.List (intercalate)
 import Data.String (IsString(..))
-import qualified Data.HashMap.Strict as M
+import Linear (V3(..))
+import Numeric (showFFloat)
+
+showV3 v =
+  let (V3 x y z) = fmap (showFFloat (Just 2)) v
+   in showString "<" . x . showString " " . y . showString " " . z .
+      showString ">"
+
+showOrientation (V3 h u l) =
+  showString "H: " . showV3 h . showString " U: " <> showV3 u <>
+  showString " L: " <>
+  showV3 l $
+  ""
 
 -- A module is the fundamental unit of an LSystem. The parameter type is
 -- variable because modules are used in different contexts whether as part of
@@ -67,7 +80,8 @@ instance Monoid (MWord a) where
 instance Show a => Show (MWord a) where
   show (MWord l) = intercalate " " $ map show l
 
-data Env = Env (M.HashMap String Expr)
+data Env =
+  Env (M.HashMap String Expr)
   deriving (Show)
 
 instance Semigroup Env where
@@ -76,40 +90,45 @@ instance Semigroup Env where
 instance Monoid Env where
   mempty = Env mempty
 
-data MatchRule = MatchRule {
-  _ruleLetter :: ModulePattern,
-  _ruleLetterPre :: Maybe ModulePattern,
-  _ruleLetterPost :: Maybe ModulePattern,
-  _ruleGuard :: MatchGuard
-} deriving (Show)
+data MatchRule = MatchRule
+  { _ruleLetter :: ModulePattern
+  , _ruleLetterPre :: Maybe ModulePattern
+  , _ruleLetterPost :: Maybe ModulePattern
+  , _ruleGuard :: MatchGuard
+  } deriving (Show)
 
-makeRule pattern = MatchRule {
-  _ruleLetter = pattern,
-  _ruleLetterPre = Nothing,
-  _ruleLetterPost = Nothing,
-  _ruleGuard = MatchAll
-}
+makeRule pattern =
+  MatchRule
+    { _ruleLetter = pattern
+    , _ruleLetterPre = Nothing
+    , _ruleLetterPost = Nothing
+    , _ruleGuard = MatchAll
+    }
 
-data MatchGuard = MatchAll | MatchGuard String Expr Expr
+data MatchGuard
+  = MatchAll
+  | MatchGuard String
+               Expr
+               Expr
   deriving (Show, Eq)
 
 makeLenses ''MatchRule
 
-data Production = Production {
-  _prodRule :: MatchRule,
-  _prodReplacement :: MWord ModuleExpr
-} deriving (Show)
+data Production = Production
+  { _prodRule :: MatchRule
+  , _prodReplacement :: MWord ModuleExpr
+  } deriving (Show)
 
 makeLenses ''Production
 
-data LSystem = LSystem {
-  _lsysAxiom :: MWord ModuleFixed,
-  _lsysN :: Int,
-  _lsysTheta :: Double,
-  _lsysProductions :: [Production],
-  _lsysIgnore :: [ModuleFixed],
-  _lsysDefines :: Env,
-  _lsysSeed :: Int
-} deriving (Show)
+data LSystem = LSystem
+  { _lsysAxiom :: MWord ModuleFixed
+  , _lsysN :: Int
+  , _lsysTheta :: Double
+  , _lsysProductions :: [Production]
+  , _lsysIgnore :: [ModuleFixed]
+  , _lsysDefines :: Env
+  , _lsysSeed :: Int
+  } deriving (Show)
 
 makeLenses ''LSystem
