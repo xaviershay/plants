@@ -2,6 +2,7 @@
 
 module Plants.LSystem.Eval where
 
+import Plants.Prelude
 import Plants.LSystem.Types
 
 import Control.Lens (assign, makeLenses, over, set, view)
@@ -53,9 +54,6 @@ replacementWithContext (p, env) =
         { _moduleSymbol = view moduleSymbol l
         , _moduleParams = map (eval env) (view moduleParams l)
         }
-
-headMaybe (x:_) = Just x
-headMaybe [] = Nothing
 
 eval :: Env -> Expr -> Double
 eval env expr =
