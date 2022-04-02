@@ -11,5 +11,5 @@ import Plants.LSystem
 import Test.Tasty
 import Test.Tasty.HUnit
 
-import Control.Lens (set)
+import Control.Lens (set, view)
 import Linear.V3 (V3(..))
