@@ -34,6 +34,7 @@ library
       Plants.SVG
       Plants.Turtle
       Systems.Geometric
+      Systems.Plants2D
   other-modules:
       Paths_plants
   hs-source-dirs:

@@ -34,8 +34,21 @@ test_interpret =
     , testTurtle "f f" [MovePenUp (V3 1 0 0), MovePenUp (V3 2 0 0)]
     , testTurtle "+ F" [MovePenDown (V3 0 1 0)]
     , testTurtle "+(3) F" [MovePenDown (V3 0 (-1) 0)]
-    , testTurtle "+ F + F" [MovePenDown (V3 0 1 0) , MovePenDown (V3 (-1) 1 0)]
+    , testTurtle "+ F + F" [MovePenDown (V3 0 1 0), MovePenDown (V3 (-1) 1 0)]
     , testTurtle "- F" [MovePenDown (V3 0 (-1) 0)]
     , testTurtle "-(3) F" [MovePenDown (V3 0 1 0)]
-    , testTurtle "- F - F" [MovePenDown (V3 0 (-1) 0), MovePenDown (V3 (-1) (-1) 0)]
+    , testTurtle
+        "- F - F"
+        [MovePenDown (V3 0 (-1) 0), MovePenDown (V3 (-1) (-1) 0)]
+    , testTurtle "[ + ] F" [MovePenDown (V3 1 0 0)]
+    , testTurtle
+        "[ + [ - ] F ] F"
+        [MovePenDown (V3 0 1 0), MovePenUp (V3 0 0 0), MovePenDown (V3 1 0 0)]
+    , testTurtle
+        "F [ F ] F"
+        [ MovePenDown (V3 1 0 0)
+        , MovePenDown (V3 2 0 0)
+        , MovePenUp (V3 1 0 0)
+        , MovePenDown (V3 2 0 0)
+        ]
     ]

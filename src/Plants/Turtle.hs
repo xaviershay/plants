@@ -12,6 +12,7 @@ import Control.Lens
   ( ASetter
   , Lens'
   , _1
+  , _2
   , assign
   , makeLenses
   , modifying
@@ -83,6 +84,19 @@ type TurtleM = RWS Double () TurtleStack [Instruction Point]
 peek :: Lens' TurtleStack TurtleState
 peek f parent = fmap (\x -> set _1 x parent) (f . fst $ parent)
 
+push :: TurtleM
+push = do
+  current <- use peek
+  modifying _2 ((:) current)
+  return mempty
+
+pop :: TurtleM
+pop = do
+  top <- head <$> use _2
+  modifying _2 (drop 1)
+  assign _1 top
+  return mempty
+
 turtleHeading :: Lens' TurtleState Point
 turtleHeading f parent =
   fmap
@@ -93,12 +107,20 @@ turtleHeading f parent =
     getHeading (V3 h _ _) = h
 
 letterToInstruction :: Char -> Maybe Double -> TurtleM
+letterToInstruction '[' a = push
+letterToInstruction ']' a = do
+  p <- use $ peek . turtlePosition
+  pop
+  p' <- use $ peek . turtlePosition
+  return $
+    if not (p `approxEqV3` p')
+      then [MovePenUp p']
+      else []
 letterToInstruction 'F' a = moveTurtle a MovePenDown
 letterToInstruction 'f' a = moveTurtle a MovePenUp
 letterToInstruction '+' a = rotateTurtle rotateU a
 letterToInstruction '-' a = rotateTurtle (rotateU . negate) a
-letterToInstruction x a =
-  error $ "unknown instruction: " <> show x <> " / " <> show a
+letterToInstruction x a = return mempty
 
 moveTurtle a i = do
   h <- use $ peek . turtleHeading
