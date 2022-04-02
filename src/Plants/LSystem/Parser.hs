@@ -3,14 +3,17 @@ module Plants.LSystem.Parser
   , parseWordExprUnsafe
   , parseExprUnsafe
   , parsePatternUnsafe
+  , testP
   ) where
 
+import Plants.Prelude
 import Plants.LSystem.Types
 
 import Text.Parsec
 import Text.Parsec.Expr
 import qualified Text.Parsec.Language as Tok
 import qualified Text.Parsec.Token as Tok
+import Debug.Trace
 
 lexer :: Tok.TokenParser ()
 lexer = Tok.makeTokenParser style
@@ -48,6 +51,43 @@ table =
         AssocLeft
     ]
   ]
+
+data X a = Child a | Sibling (Tree a) deriving (Show)
+wordParser = do
+  trees <- many1 ((Child <$> symbolParser2) <|> (Sibling <$> (char '[' *> wordParser <* char ']')))
+
+  return . Root $ f [] trees
+  where
+    f :: [Tree a] -> [X a] -> [Tree a]
+    f ns (Child x:rest) = (Node x (f [] rest):ns)
+    f ns (Sibling x:rest) = f (x:ns) rest
+    f tree [] = tree
+
+symbolParser2 = do
+  symbol <- satisfy (\x -> not $ x `elem` (" (),[]" :: String))
+
+  return $ symbol
+
+-- "ABC" -> Node 'A' [Node 'B' [Node 'C']]
+-- "[A]" -> Node 'A' []
+-- "[AB]C" -> Root [Node 'A' [Node 'B' []]
+-- "A[B]C" -> Node 'A' [Node 'B' [], Node 'C' []]
+-- "A[[B]C]D" -> Node 'A' [Node 'B' [], Node 'C' [], Node 'D' []]
+-- "A[B][C]" -> Node 'A' [Node 'B' [], Node 'C' []]
+-- "A[BD][C]" -> Node 'A' [Node 'B' [Node 'D' []], Node 'C' []]
+testP = toS . normT $ let x = parseUnsafe wordParser "[A][BD]" in trace (show $ normT x) x
+
+normT (Root [x]) = normT x
+normT (Root xs) = Root $ map normT xs
+normT (Node a ns) = Node a (map normT ns)
+normT x = x
+
+toS :: Tree Char -> String
+toS (Root cs) = intercalate "" (map (\x -> "[" <> toS x <> "]") . reverse $ cs)
+toS (Root [c]) = toS c
+toS (Node n []) = [n]
+toS (Node n [c]) = [n] <> toS c
+toS (Node n cs) = [n] <> intercalate "" (map (\x -> "[" <> toS x <> "]") . reverse $ cs)
 
 parens = between (char '(' <* whiteSpace) (char ')')
 

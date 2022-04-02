@@ -1,6 +1,8 @@
 module Main where
 
 import Plants.SVG
+import Plants.LSystem.Eval
+import Plants.LSystem.Parser
 import Control.Monad (forM_)
 import Control.Lens (set)
 import Linear (V2(..))
@@ -11,9 +13,10 @@ import Systems.Penrose
 
 main :: IO ()
 main = do
-  renderGeometrics
-  renderPlants2D
-  renderPenrose
+  putStrLn $ show testP
+  -- renderGeometrics
+  -- renderPlants2D
+  -- renderPenrose
 
 renderGeometrics = do
   let systems =

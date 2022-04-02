@@ -12,6 +12,59 @@ import System.Random.Stateful (StatefulGen, mkStdGen, runStateGen, uniformRM)
 
 type ModuleContext = ((ModuleFixed, Maybe ModuleFixed), Maybe ModuleFixed)
 
+-- data Tree a = Root [Tree a] | Node a [Tree a] deriving (Show)
+
+-- "ABC" -> Node 'A' [Node 'B' [Node 'C']]
+-- "[A]" -> Node 'A' []
+-- "[AB]C" -> Root [Node 'A' [Node 'B' []]
+-- "A[B]C" -> Node 'A' [Node 'B' [], Node 'C' []]
+-- "A[[B]C]D" -> Node 'A' [Node 'B' [], Node 'C' [], Node 'D' []]
+-- "A[B][C]" -> Node 'A' [Node 'B' [], Node 'C' []]
+-- "A[BD][C]" -> Node 'A' [Node 'B' [Node 'D' []], Node 'C' []]
+
+
+-- t1 = foldl build [Root []] ("ABC" :: String)
+-- --t2 = foldl build [Root []] ("A[B]C" :: String)
+-- 
+-- build tree '[' = (Root []:tree)
+-- build (tree:Root ls:ts) ']' = (Root (tree:ls):ts)
+-- build tree ']' = error $ "unhandled case: " <> show tree
+-- build ts x = (Node x []:ts)
+
+-- t2 = runState builder "ABC"
+-- 
+-- builder = do
+--   char <- get
+-- 
+--   case char of
+--     "" -> Nil
+--     ('[':xs)
+-- data Crumb =
+--     LeftCrumb Tree
+--   | RightCrumb Tree
+--   deriving (Show)
+-- 
+-- type Crumbs = [Crumb]
+-- type Zipper = (Tree, Crumbs)
+-- 
+-- goTop :: Zipper -> Tree a
+-- goTop = undefined
+-- 
+-- toTree :: String -> Tree Char
+-- toTree = goTop $ toTree' (Nil, [])
+-- 
+-- toTree' :: Zipper -> String -> Zipper
+-- toTree' zipper (x:xs) = toTree' (setNode x $ goLeft zipper) xs
+-- toTree' (Node a lhs rhs) ("[":xs) = (Node a lhs (toTree xs))
+-- toTree' node ("]":xs) = node
+-- 
+-- setNode :: a -> Zipper -> Zipper
+-- setNode x (Nil, crumbs) = (Node x Nil Nil)
+
+-- parent (skipping ignores)
+-- 
+-- nextChild or sibling
+
 step :: StatefulGen g m => LSystem -> g -> m LSystem
 step system gen = do
   let MWord axiom = view lsysAxiom system
@@ -36,8 +89,12 @@ run :: LSystem -> LSystem
 run system = fst $ runStateGen (mkStdGen . view lsysSeed $ system) (runM system)
 
 extractPosts :: [ModuleFixed] -> [ModuleFixed] -> [Maybe ModuleFixed]
-extractPosts word ignores = extractPosts' id word ignores
-
+extractPosts word ignores =
+  let f =
+        filter
+          (\x ->
+             not $ view moduleSymbol x `elem` (map (view moduleSymbol) ignores))
+   in map (headMaybe . f) . drop 1 . tails $ word
 extractPosts' transform word ignores =
   let f =
         filter
@@ -46,7 +103,10 @@ extractPosts' transform word ignores =
    in map (firstSymbolExcludingBrackets (transform . view moduleSymbol) . f) .
       drop 1 . tails $
       word
-
+-- and r is a subtree
+-- of T originating at the ending node of S. The production can then be
+-- applied by replacing S with the axial tree specified as the production
+-- successor.
 firstSymbolExcludingBrackets :: (a -> String) -> [a] -> Maybe a
 firstSymbolExcludingBrackets f xs = go 0 (map (\x -> (f x, x)) xs)
   where

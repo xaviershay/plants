@@ -66,6 +66,9 @@ data Term2
   | Exponent
   deriving (Show, Eq)
 
+data Tree a = Root [Tree a] | Node a [Tree a] deriving (Show)
+data MWord2 a = MWord2 (Tree a) deriving (Show)
+
 -- MWord is a newtype wrapper around a list of modules
 data MWord a =
   MWord [a]

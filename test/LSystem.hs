@@ -53,5 +53,14 @@ test_run =
             n 1
             axiom "Fb [ + Fa ] Fa [ - Fa ] Fa"
             productions [("Fb" <| "Fa", "Fb")]
+        , testSystem
+            "Basipetal propagation (p. 32)"
+            "Fa [ + Fa ] Fb [ - Fa ] Fb" $
+          lsystem $ do
+            ignore "+ -"
+            n 1
+            axiom "Fa [ + Fa ] Fa [ - Fa ] Fb"
+            productions [("Fa" |> "Fb", "Fb")]
         ]
     ]
+    -- TODO: Verify that context-sensitive matches over context free (p. 30)
