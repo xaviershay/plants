@@ -21,6 +21,9 @@ instance IsString (MWord ModuleExpr) where
 instance IsString (MWord ModuleFixed) where
   fromString x = parseWordUnsafe x
 
+instance IsString ModulePattern where
+  fromString x = parsePatternUnsafe x
+
 type LSystemBuilder = State LSystem ()
 
 emptyLSystem = LSystem {
@@ -59,3 +62,7 @@ productions ps = do
 lsystem :: LSystemBuilder -> LSystem
 lsystem m = snd $ runState m emptyLSystem
 
+(<|) :: ModulePattern -> MatchRule -> MatchRule
+l <| r = set ruleLetterPre (Just l) r
+(|>) :: MatchRule -> ModulePattern -> MatchRule
+r |> l = set ruleLetterPost (Just l) r

@@ -15,7 +15,7 @@ test_run =
     "LSystem.run"
     [ testGroup
         "Deterministic & Context-free (DOL)"
-        [ testSystem "Trivial (p. 4)" "a b a b a a b a" $
+        [ testSystem "First example (p. 4)" "a b a b a a b a" $
           lsystem $ do
             axiom "b"
             n 5
@@ -26,5 +26,32 @@ test_run =
             axiom "a▶"
             productions
               [("a▶", "a◀ b▶"), ("a◀", "b◀ a▶"), ("b▶", "a▶"), ("b◀", "a◀")]
+        ]
+    , testGroup
+        "Context-sensitive"
+        [ testSystem "Pre-condition (p. 31)" "a a b" $
+          lsystem $ do
+            axiom "b a a"
+            n 2
+            productions [("b" <| "a", "b"), ("b", "a")]
+        , testSystem "Post-condition (p. 31)" "b a a" $
+          lsystem $ do
+            axiom "a a b"
+            n 2
+            productions [("a" |> "b", "b"), ("b", "a")]
+        , testSystem "Ignore (p. 32)" "b a + - a" $
+          lsystem $ do
+            n 2
+            axiom "a a + - b"
+            ignore "+ -"
+            productions [("a" |> "b", "b"), ("b", "a")]
+        , testSystem
+            "Acropetal propagation (p. 32)"
+            "Fb [ + Fb ] Fb [ - Fa ] Fa" $
+          lsystem $ do
+            ignore "+ -"
+            n 1
+            axiom "Fb [ + Fa ] Fa [ - Fa ] Fa"
+            productions [("Fb" <| "Fa", "Fb")]
         ]
     ]

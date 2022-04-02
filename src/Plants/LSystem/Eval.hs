@@ -2,8 +2,8 @@
 
 module Plants.LSystem.Eval where
 
-import Plants.Prelude
 import Plants.LSystem.Types
+import Plants.Prelude
 
 import Control.Lens (assign, makeLenses, over, set, view)
 import qualified Data.HashMap.Strict as M
@@ -35,14 +35,35 @@ runM system gen =
 run :: LSystem -> LSystem
 run system = fst $ runStateGen (mkStdGen . view lsysSeed $ system) (runM system)
 
-extractPosts word ignores =
+extractPosts :: [ModuleFixed] -> [ModuleFixed] -> [Maybe ModuleFixed]
+extractPosts word ignores = extractPosts' id word ignores
+
+extractPosts' transform word ignores =
   let f =
         filter
           (\x ->
              not $ view moduleSymbol x `elem` (map (view moduleSymbol) ignores))
-   in map (headMaybe . f) . drop 1 . tails $ word
+   in map (firstSymbolExcludingBrackets (transform . view moduleSymbol) . f) .
+      drop 1 . tails $
+      word
 
-extractPres word = reverse . extractPosts (reverse word)
+firstSymbolExcludingBrackets :: (a -> String) -> [a] -> Maybe a
+firstSymbolExcludingBrackets f xs = go 0 (map (\x -> (f x, x)) xs)
+  where
+    go :: Int -> [(String, a)] -> Maybe a
+    go n (("[", _):xs) = go (n + 1) xs
+    go n (("]", _):xs) = go (n - 1) xs
+    go n ((_, x):_)
+      | n <= 0 = Just x
+    go n (_:xs) = go n xs
+    go n [] = Nothing
+
+extractPres :: [ModuleFixed] -> [ModuleFixed] -> [Maybe ModuleFixed]
+extractPres word = reverse . extractPosts' flipBrackets (reverse word)
+
+flipBrackets "]" = "["
+flipBrackets "[" = "]"
+flipBrackets x = x
 
 replacementWithContext :: (Production, Env) -> MWord ModuleFixed
 replacementWithContext (p, env) =
@@ -122,7 +143,7 @@ identityProduction ((l, _), _) =
   Production
     { _prodRule =
         makeRule $
-          Module {_moduleSymbol = view moduleSymbol l, _moduleParams = []}
+        Module {_moduleSymbol = view moduleSymbol l, _moduleParams = []}
     , _prodReplacement = MWord [over moduleParams (map ExprConst) l]
     }
 
