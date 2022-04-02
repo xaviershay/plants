@@ -66,3 +66,6 @@ lsystem m = snd $ runState m emptyLSystem
 l <| r = set ruleLetterPre (Just l) r
 (|>) :: MatchRule -> ModulePattern -> MatchRule
 r |> l = set ruleLetterPost (Just l) r
+
+-- (|:) :: MatchRule -> String -> MatchRule
+-- rule |: guardString = set ruleGuard (parseGuardUnsafe guardString) rule

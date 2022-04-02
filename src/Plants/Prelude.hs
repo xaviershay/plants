@@ -2,11 +2,13 @@ module Plants.Prelude
   ( module Plants.Prelude
   , module Debug.Trace
   , module Data.List
+  , module Control.Lens
   ) where
 
 import Data.List (intercalate)
 import Debug.Trace (trace, traceM)
 import Numeric (showFFloat)
+import Control.Lens (view, set)
 
 headMaybe (x:_) = Just x
 headMaybe [] = Nothing

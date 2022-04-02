@@ -53,5 +53,28 @@ test_run =
             n 1
             axiom "Fb [ + Fa ] Fa [ - Fa ] Fa"
             productions [("Fb" <| "Fa", "Fb")]
+        , testSystem
+            "Basipetal propagation (p. 32)"
+            "Fa [ + Fa ] Fb [ - Fa ] Fb" $
+          lsystem $ do
+            ignore "+ -"
+            n 1
+            axiom "Fa [ + Fa ] Fa [ - Fa ] Fb"
+            productions [("Fa" |> "Fb", "Fb")]
+        , testSystem
+            "Parametric basipetal propagation"
+            "Fb(1) [ Fa(2) ] Fb(1)" $
+          lsystem $ do
+            n 1
+            axiom "Fa(0) [ Fa(2) ] Fb(1)"
+            productions [("Fa(x)" |> "Fb(y)", "Fb(y)")]
+        -- , testSystem
+        --     "Parametric basipetal propagation with guard"
+        --     "Fb(1) [ Fa(2) ] Fb(1)" $
+        --   lsystem $ do
+        --     n 1
+        --     axiom "Fa(0) [ Fb(2) ] Fb(1)"
+        --     productions [("Fa(x)" |> "Fb(y)" |: "y < 2", "Fb(y)")]
         ]
     ]
+    -- TODO: Verify that context-sensitive matches over context free (p. 30)

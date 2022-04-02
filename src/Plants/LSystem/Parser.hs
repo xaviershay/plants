@@ -6,7 +6,9 @@ module Plants.LSystem.Parser
   ) where
 
 import Plants.LSystem.Types
+import Plants.Prelude
 
+import Debug.Trace
 import Text.Parsec
 import Text.Parsec.Expr
 import qualified Text.Parsec.Language as Tok

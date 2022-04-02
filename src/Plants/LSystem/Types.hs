@@ -66,10 +66,14 @@ data Term2
   | Exponent
   deriving (Show, Eq)
 
+data Tree a = Root [Tree a] | Node a [Tree a] deriving (Show)
+
 -- MWord is a newtype wrapper around a list of modules
 data MWord a =
   MWord [a]
   deriving (Eq)
+
+unwrapMWord (MWord a) = a
 
 instance Semigroup (MWord x) where
   (MWord a) <> (MWord b) = MWord $ a <> b
