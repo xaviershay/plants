@@ -41,6 +41,7 @@ executables:
     - parsec
     - random
     - linear
+    - blaze-svg
 
 tests:
   plants-test:
