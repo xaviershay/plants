@@ -1,6 +1,7 @@
 module Plants.LSystem.Parser
   ( parseWordUnsafe
   , parseWordExprUnsafe
+  , parseExprUnsafe
   , parsePatternUnsafe
   ) where
 
@@ -70,6 +71,15 @@ moduleParser paramParser = do
     pure []
   return $ Module {_moduleSymbol = symbol, _moduleParams = params}
 
+exprParser = buildExpressionParser table (whiteSpace *> termParser)
+
+termParser =
+  (parens exprParser <|> ExprConst <$> decimalParser <|>
+   ExprVar <$> many1 exprSymbolParser) <*
+  whiteSpace
+
+exprSymbolParser = satisfy (\x -> not $ x `elem` (" (),+-*/^" :: String))
+
 parseUnsafe :: Parsec SourceName () a -> SourceName -> a
 parseUnsafe parser input =
   case parse parser input input of
@@ -85,14 +95,10 @@ parsePatternUnsafe :: String -> ModulePattern
 parsePatternUnsafe =
   parseUnsafe $ whiteSpace *> moduleParser (many1 symbolParser) <* whiteSpace
 
+parseExprUnsafe :: String -> Expr
+parseExprUnsafe = parseUnsafe exprParser
+
 parseWordExprUnsafe :: String -> MWord ModuleExpr
 parseWordExprUnsafe =
   parseUnsafe $
   MWord <$> (whiteSpace *> many (moduleParser exprParser <* whiteSpace))
-  where
-    exprParser = buildExpressionParser table (whiteSpace *> termParser)
-    termParser =
-      (parens exprParser <|> ExprConst <$> decimalParser <|>
-       ExprVar <$> many1 exprSymbolParser) <*
-      whiteSpace
-    exprSymbolParser = satisfy (\x -> not $ x `elem` (" (),+-*/^" :: String))

@@ -10,6 +10,7 @@ import Plants.LSystem.Eval
 import Control.Lens (makeLenses, assign, set, view)
 import Control.Monad.State
 import Data.String (IsString(..))
+import qualified Data.HashMap.Strict as M
 
 instance IsString MatchRule where
   fromString x = makeRule (parsePatternUnsafe x)
@@ -40,6 +41,12 @@ n = assign lsysN
 
 theta :: Double -> LSystemBuilder
 theta = assign lsysTheta
+
+ignore :: MWord ModuleFixed -> LSystemBuilder
+ignore (MWord x) = assign lsysIgnore x
+
+define :: [(String, String)] -> LSystemBuilder
+define = assign lsysDefines . Env . M.map parseExprUnsafe . M.fromList
 
 productions :: [(MatchRule, MWord ModuleExpr)] -> LSystemBuilder
 productions ps = do

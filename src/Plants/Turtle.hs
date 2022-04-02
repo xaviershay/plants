@@ -35,7 +35,7 @@ data Instruction a
   | MovePenUp a
   | ChangeColor Int
   | StrokeWidth Double
-  | Fill Int
+  | Fill (Maybe Int)
   deriving (Show)
 
 approxEq a b = approxZero $ b - a
@@ -120,6 +120,9 @@ letterToInstruction 'F' a = moveTurtle a MovePenDown
 letterToInstruction 'f' a = moveTurtle a MovePenUp
 letterToInstruction '+' a = rotateTurtle rotateU a
 letterToInstruction '-' a = rotateTurtle (rotateU . negate) a
+letterToInstruction '|' _ = local (const 180) $ rotateTurtle rotateU Nothing
+letterToInstruction '{' a = changeFill a
+letterToInstruction '}' _ = changeFill Nothing
 letterToInstruction x a = return mempty
 
 moveTurtle a i = do
@@ -136,10 +139,18 @@ rotateTurtle r a = do
     (\m -> m !*! r (toRadians $ theta * fromMaybe 1 a))
   return mempty
 
+changeFill a = do
+  let fillColor = round <$> a
+  assign (peek . turtleFill) fillColor
+  return [Fill fillColor]
+
 traceState :: TurtleM -> TurtleM
 traceState m = do
   r <- m
+  p <- use $ peek . turtlePosition
   o <- use $ peek . turtleOrientation
+  traceM ""
+  traceM $ "p: " <> show p
   traceM $ "o: " <> show o
   return r
 

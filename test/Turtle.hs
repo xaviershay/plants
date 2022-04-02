@@ -51,4 +51,12 @@ test_interpret =
         , MovePenUp (V3 1 0 0)
         , MovePenDown (V3 2 0 0)
         ]
+    , testTurtle "F | F" [MovePenDown (V3 1 0 0), MovePenDown (V3 0 0 0)]
+    , testTurtle
+        "{(1) F } F"
+        [ Fill $ Just 1
+        , MovePenDown (V3 1 0 0)
+        , Fill Nothing
+        , MovePenDown (V3 2 0 0)
+        ] 
     ]

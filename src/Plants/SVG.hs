@@ -4,6 +4,7 @@
 module Plants.SVG where
 
 import Plants.LSystem
+import Plants.Prelude
 import Plants.Turtle
 
 import Control.Lens (assign, makeLenses, modifying, view)
@@ -14,7 +15,6 @@ import Data.List (intercalate)
 
 import Linear (V2(..), V3(..), (!*), (!*!))
 
-import Numeric (showFFloat)
 import Text.Blaze.Svg11 ((!), l, lr, m, mkPath, mr, rotate)
 import qualified Text.Blaze.Svg11 as S
 import qualified Text.Blaze.Svg11.Attributes as A
@@ -32,6 +32,7 @@ data SVGSettings = SVGSettings
   { _settingProjection :: Point -> ProjectedPoint
   , _settingViewport :: Viewport
   , _settingColors :: [String]
+  , _settingBackground :: String
   , _settingStrokeWidth :: Double
   , _settingOutputDir :: String
   }
@@ -75,6 +76,7 @@ emptySVGSettings =
     , _settingColors = defaultColors
     , _settingStrokeWidth = defaultStrokeWidth
     , _settingOutputDir = "output/"
+    , _settingBackground = "#CBD4C2"
     }
 
 default2d = emptySVGSettings
@@ -104,7 +106,7 @@ turtleToSVGPaths settings is = snd $ execRWST f () (mkSVGPath (V2 0 0)) []
               MovePenUp x -> assign pathStart . project $ x
               ChangeColor x -> assign pathStroke x
               StrokeWidth x -> assign pathStrokeWidth x
-              Fill x -> assign pathFill (Just x)
+              Fill x -> assign pathFill x
 
 pathsToSVG :: SVGSettings -> [SVGPath] -> String
 pathsToSVG settings paths = renderSvg svgDoc
@@ -125,11 +127,9 @@ pathsToSVG settings paths = renderSvg svgDoc
               S.rect ! A.x (S.toValue minX) ! A.y (S.toValue minY) !
                 A.width (S.toValue $ maxX - minX) !
                 A.height (S.toValue $ maxY - minY) !
-                A.fill "#CBD4C2"
+                (A.fill . S.toValue $ view settingBackground settings)
               forM_ paths $ \path -> do
-                S.path !
-                  A.style
-                    (S.toValue $ toStyle settings path) !
+                S.path ! A.style (S.toValue $ toStyle settings path) !
                   A.d
                     (mkPath $ do
                        let (V2 x y) = view pathStart path
@@ -151,9 +151,6 @@ extrude t (V2 x1 y1, V2 x2 y2) =
   let sx = (x2 - x1) * t
       sy = (y2 - y1) * t
    in (V2 (x1 - sx) (y1 - sy), V2 (x2 + sx) (y2 + sy))
-
-showFullPrecision :: Double -> String
-showFullPrecision x = showFFloat Nothing x ""
 
 toStyle :: SVGSettings -> SVGPath -> String
 toStyle settings path =
