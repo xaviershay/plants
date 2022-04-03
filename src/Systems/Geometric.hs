@@ -4,6 +4,13 @@ module Systems.Geometric where
 
 import Plants.LSystem
 
+cube =
+  lsystem $ do
+    axiom "[ ' S ] '(0) [ & S ] [ \\ S ] & F + F | / S ^ S"
+    n 1
+    theta 90
+    productions [("S", "F + F + F + F +")]
+
 kochTiles =
   lsystem $ do
     axiom "F - F - F - F"

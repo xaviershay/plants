@@ -11,7 +11,7 @@ import Control.Lens (assign, makeLenses, modifying, view)
 
 import Control.Monad (forM_, when)
 import Control.Monad.RWS (execRWST, get, tell)
-import Data.Foldable (toList)
+import Data.Foldable (toList, intercalate, sortOn)
 import Data.List (intercalate)
 import Data.Sequence (ViewR(..), (|>), viewr)
 import qualified Data.Sequence as S
@@ -48,6 +48,7 @@ data SVGPath = SVGPath
   , _pathStroke :: Int
   , _pathStrokeWidth :: Double
   , _pathFill :: Maybe Int
+  , _pathZs :: [Double]
   } deriving (Show, Eq)
 
 makeLenses ''SVGPath
@@ -59,9 +60,46 @@ mkSVGPath start =
     , _pathStroke = 0
     , _pathStrokeWidth = 1
     , _pathFill = Nothing
+    , _pathZs = mempty
     }
 
-orthoProjection = V3 (V3 1.0 0 0) (V3 0.0 (-1) 0) (V3 0.0 0 0)
+avgZ path =
+  let zs = view pathZs path
+   in case zs of
+        [] -> 0.0
+        _ -> sum zs / (fromIntegral $ length zs)
+
+projection3to2 matrix p =
+  let (V3 x y _) = matrix !* p
+   in (V2 x y)
+
+-- Flip Y axis such that positive direction is up rather than down
+orthoMatrix = V3 (V3 1.0 0 0) (V3 0.0 (-1) 0) (V3 0.0 0 0)
+
+orthoProjection = projection3to2 orthoMatrix
+
+-- First transform the X/Y axis to point R/U (rather than default R/D in SVG
+-- coords), then apply standard iso projection rotations.
+isoMatrix = rotateH beta !*! rotateL (pi / 4) !*! rotateL pi !*! rotateU pi
+
+beta = asin (tan (30.0 / 180.0 * pi))
+
+isoProjection = projection3to2 isoMatrix
+
+perspectiveProjection p =
+  let (V3 x y z) = cameraRMatrix !* (p - cameraP)
+   in (V2 x y)
+  where
+    cameraP = V3 (0) 10 (-10)
+    cameraR = V3 0 0 0
+    cameraE = V3 1 1 1
+    cameraEMatrix =
+      let (V3 ex ey ez) = cameraE
+       in V3 (V3 1 0 (ex / ez)) (V3 0 1 (ey / ez)) (V3 0 0 (1 / ez))
+    cameraRMatrix =
+      let (V3 h u l) = cameraR
+       in cameraEMatrix !*! rotateU h !*! rotateL u !*! rotateH l !*! rotateL pi !*!
+          rotateU pi
 
 defaultStrokeWidth = 0.1
 
@@ -71,10 +109,7 @@ defaultColors =
 
 emptySVGSettings =
   SVGSettings
-    { _settingProjection =
-        \p ->
-          let (V3 x y _) = orthoProjection !* p
-           in (V2 x y)
+    { _settingProjection = orthoProjection
     , _settingViewport = ViewportBoundingRect 0.1
     , _settingColors = defaultColors
     , _settingStrokeWidth = defaultStrokeWidth
@@ -93,8 +128,16 @@ turtleToSVGPaths settings is = snd $ execRWST f () (mkSVGPath (V2 0 0)) []
         pathUnderConstruction <- get
         let pathStarted = not . null . view pathPoints $ pathUnderConstruction
         case i of
-          MovePenDown p -> do
+          MovePenDown p
+           -> do
             modifying pathPoints (\ps -> ps |> project p)
+            modifying
+              pathZs
+              (\zs ->
+                 zs <>
+                 [ let (V3 _ _ z) = p
+                    in z
+                 ])
           _ -> do
             when pathStarted $ do
               tell [pathUnderConstruction]
@@ -129,7 +172,7 @@ pathsToSVG settings paths = renderSvg svgDoc
                 A.width (S.toValue $ maxX - minX) !
                 A.height (S.toValue $ maxY - minY) !
                 (A.fill . S.toValue $ view settingBackground settings)
-              forM_ paths $ \path -> do
+              forM_ (sortOn avgZ paths) $ \path -> do
                 S.path ! A.style (S.toValue $ toStyle settings path) !
                   A.d
                     (mkPath $ do

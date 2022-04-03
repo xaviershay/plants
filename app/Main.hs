@@ -14,22 +14,23 @@ import Linear (V2(..))
 main :: IO ()
 main = do
   renderGeometrics
-  renderPlants2D
-  renderHonda
-  renderPenrose
+  --renderPlants2D
+  -- renderHonda
+  --renderPenrose
 
 renderGeometrics = do
   let systems =
-        [ ("koch-tiles", kochTiles)
-        , ("koch-spiral", kochSpiral)
-        , ("koch-island", kochIsland)
-        , ("island-lakes", islandLakes)
-        , ("dragon-curve", dragonCurve)
-        , ("gosper-hex-curve", gosperHexCurve)
+        [--- ("koch-tiles", kochTiles)
+        --, ("koch-spiral", kochSpiral)
+        --, ("koch-island", kochIsland)
+        --, ("island-lakes", islandLakes)
+        --, ("dragon-curve", dragonCurve)
+        --, ("gosper-hex-curve", gosperHexCurve)
+         ("cube", cube)
         ]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
-      (set settingOutputDir "output/geometric-" default2d)
+      (set settingProjection isoProjection . set settingOutputDir "output/geometric-" $ default2d)
       system
       name
 
@@ -46,7 +47,9 @@ renderHonda = do
   let systems = map (\n -> ("honda-" <> show n, honda n)) [1 .. 4]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
-      (set settingOutputDir "output/plants-2d-" $ default2d)
+      (set settingOutputDir "output/plants-2d-" .
+       set settingProjection perspectiveProjection $
+       default2d)
       system
       name
 
