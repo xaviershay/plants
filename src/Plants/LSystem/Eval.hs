@@ -8,26 +8,32 @@ import Plants.Prelude
 import Control.Lens (assign, makeLenses, over, set, view)
 import qualified Data.HashMap.Strict as M
 import Data.List (partition, tails)
-import System.Random.Stateful (StatefulGen, mkStdGen, runStateGen, uniformRM)
 import Data.Maybe (listToMaybe)
+import System.Random.Stateful (StatefulGen, mkStdGen, runStateGen, uniformRM)
 
 type ModuleContext = (ModuleFixed, Maybe ModuleFixed, [ModuleFixed])
-
 
 -- testP =
 --   let MWord x = "A [ B D ] [ C ]"
 --    in trace (show $ mapTree gatherContext $ buildTreeWith (view moduleSymbol) $ x) x
-
 data TreeBuilder a
   = Child a
   | Sibling (Tree a)
   deriving (Show)
 
-gatherContext m parents children = (m, listToMaybe $ take 1 parents, immediates children)
+gatherContext ignores m parents children =
+  ( m
+  , listToMaybe . take 1 . filter (not . ignored) $ parents
+  , immediates children)
   where
     immediates = concatMap f2
     f2 (Root xs) = immediates xs
-    f2 (Node x _) = [x]
+    f2 (Node x cs) =
+      if ignored x
+        then immediates cs
+        else [x]
+    ignored x =
+      view moduleSymbol x `elem` ("[" : "]" : map (view moduleSymbol) ignores)
 
 type TreeTraverser a b = a -> [a] -> [Tree a] -> b
 
@@ -35,33 +41,39 @@ mapTree :: TreeTraverser a b -> Tree a -> [b]
 mapTree f t = mapTree' mempty t
   where
     mapTree' parent (Root cs) = concatMap (mapTree' parent) . reverse $ cs
-    mapTree' parent (Node x cs) = (f x parent $ reverse cs) : mapTree' (x:parent) (Root cs)
+    mapTree' parent (Node x cs) =
+      (f x parent $ reverse cs) : mapTree' (x : parent) (Root cs)
 
 buildTreeWith :: (a -> String) -> [a] -> Tree a
 buildTreeWith mapper = fst . blah'
-
   where
     f ns (Child x:rest) = (Node x (f [] rest) : ns)
     f ns (Sibling x:rest) = f (x : ns) rest
     f tree [] = tree
-
-    blah' ms = let (treeInstructions, remainder) = extractTree ms in
-      (Root $ f [] treeInstructions, remainder)
-
+    blah' ms =
+      let (treeInstructions, remainder) = extractTree ms
+       in (Root $ f [] treeInstructions, remainder)
     extractTree [] = ([], [])
-    extractTree (m:remainder) = case mapper m of
-                      "[" -> let (ts, rest) = blah' remainder in let (x, y) = extractTree rest in ([Sibling ts] <> x, y)
-                      "]" -> ([], remainder)
-                      x -> let (ts, rest) = extractTree remainder in ([Child m] <> ts, rest)
+    extractTree (m:remainder) =
+      case mapper m of
+        "[" ->
+          let (ts, rest) = blah' remainder
+           in let (x, y) = extractTree rest
+               in ([Sibling (Node m [ts])] <> x, y)
+        "]" -> ([Child m], remainder)
+        x ->
+          let (ts, rest) = extractTree remainder
+           in ([Child m] <> ts, rest)
+
+axiomWithContext ignores =
+  mapTree (gatherContext ignores) . buildTreeWith (view moduleSymbol)
 
 step :: StatefulGen g m => LSystem -> g -> m LSystem
 step system gen = do
   let MWord axiom = view lsysAxiom system
   let ignores = view lsysIgnore system
-  let axiomWithContext =
-         mapTree gatherContext . buildTreeWith (view moduleSymbol) $ axiom
-     --    zip (zip axiom (extractPres axiom ignores)) (extractPosts axiom ignores)
-  parts <- mapM (findProduction system gen) axiomWithContext
+  let axiomContext = axiomWithContext ignores axiom
+  parts <- mapM (findProduction system gen) axiomContext
   return $
     set lsysAxiom (foldl (<>) mempty . map replacementWithContext $ parts) .
     over lsysN (\x -> x - 1) $
@@ -77,43 +89,6 @@ runM system gen =
 
 run :: LSystem -> LSystem
 run system = fst $ runStateGen (mkStdGen . view lsysSeed $ system) (runM system)
-
-extractPosts :: [ModuleFixed] -> [ModuleFixed] -> [Maybe ModuleFixed]
-extractPosts word ignores =
-  let f =
-        filter
-          (\x ->
-             not $ view moduleSymbol x `elem` (map (view moduleSymbol) ignores))
-   in map (headMaybe . f) . drop 1 . tails $ word
-extractPosts' transform word ignores =
-  let f =
-        filter
-          (\x ->
-             not $ view moduleSymbol x `elem` (map (view moduleSymbol) ignores))
-   in map (firstSymbolExcludingBrackets (transform . view moduleSymbol) . f) .
-      drop 1 . tails $
-      word
--- and r is a subtree
--- of T originating at the ending node of S. The production can then be
--- applied by replacing S with the axial tree specified as the production
--- successor.
-firstSymbolExcludingBrackets :: (a -> String) -> [a] -> Maybe a
-firstSymbolExcludingBrackets f xs = go 0 (map (\x -> (f x, x)) xs)
-  where
-    go :: Int -> [(String, a)] -> Maybe a
-    go n (("[", _):xs) = go (n + 1) xs
-    go n (("]", _):xs) = go (n - 1) xs
-    go n ((_, x):_)
-      | n <= 0 = Just x
-    go n (_:xs) = go n xs
-    go n [] = Nothing
-
-extractPres :: [ModuleFixed] -> [ModuleFixed] -> [Maybe ModuleFixed]
-extractPres word = reverse . extractPosts' flipBrackets (reverse word)
-
-flipBrackets "]" = "["
-flipBrackets "[" = "]"
-flipBrackets x = x
 
 replacementWithContext :: (Production, Env) -> MWord ModuleFixed
 replacementWithContext (p, env) =
@@ -209,8 +184,11 @@ matchProduction globalEnv prod context@(l, pre, post) =
       (case view ruleLetterPost r of
          Nothing -> True
          Just _ ->
-           fmap (view moduleSymbol) (view ruleLetterPost r) ==
-           fmap (view moduleSymbol) (headMaybe post)) &&
+           any
+             (\p ->
+                fmap (view moduleSymbol) (view ruleLetterPost r) ==
+                Just (view moduleSymbol p))
+             post) &&
       (case view ruleGuard r of
          MatchAll -> True
          MatchGuard op lhs rhs ->

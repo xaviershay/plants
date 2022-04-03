@@ -74,6 +74,8 @@ data MWord a =
   MWord [a]
   deriving (Eq)
 
+unwrapMWord (MWord a) = a
+
 instance Semigroup (MWord x) where
   (MWord a) <> (MWord b) = MWord $ a <> b
 
