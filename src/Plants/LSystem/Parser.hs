@@ -6,14 +6,14 @@ module Plants.LSystem.Parser
   , testP
   ) where
 
-import Plants.Prelude
 import Plants.LSystem.Types
+import Plants.Prelude
 
+import Debug.Trace
 import Text.Parsec
 import Text.Parsec.Expr
 import qualified Text.Parsec.Language as Tok
 import qualified Text.Parsec.Token as Tok
-import Debug.Trace
 
 lexer :: Tok.TokenParser ()
 lexer = Tok.makeTokenParser style
@@ -52,20 +52,34 @@ table =
     ]
   ]
 
-data X a = Child a | Sibling (Tree a) deriving (Show)
-wordParser = do
-  trees <- many1 ((Child <$> symbolParser2) <|> (Sibling <$> (char '[' *> wordParser <* char ']')))
+data X a
+  = Child a
+  | Sibling (Tree a)
+  deriving (Show)
 
+moduleParser2 paramParser = do
+  symbol <- many1 symbolParser2
+  params <-
+    try (parens (paramParser <* whiteSpace) `sepBy` (char ',' >> whiteSpace)) <|>
+    pure []
+  _ <- whiteSpace
+  return $ Module {_moduleSymbol = symbol, _moduleParams = params}
+
+wordParser modParser = do
+  _ <- whiteSpace
+  trees <-
+    many1
+      ( Child <$> modParser <|>
+       (Sibling <$> (char '[' *> wordParser modParser <* char ']' <* whiteSpace)))
   return . Root $ f [] trees
   where
     f :: [Tree a] -> [X a] -> [Tree a]
-    f ns (Child x:rest) = (Node x (f [] rest):ns)
-    f ns (Sibling x:rest) = f (x:ns) rest
+    f ns (Child x:rest) = (Node x (f [] rest) : ns)
+    f ns (Sibling x:rest) = f (x : ns) rest
     f tree [] = tree
 
 symbolParser2 = do
   symbol <- satisfy (\x -> not $ x `elem` (" (),[]" :: String))
-
   return $ symbol
 
 -- "ABC" -> Node 'A' [Node 'B' [Node 'C']]
@@ -75,19 +89,30 @@ symbolParser2 = do
 -- "A[[B]C]D" -> Node 'A' [Node 'B' [], Node 'C' [], Node 'D' []]
 -- "A[B][C]" -> Node 'A' [Node 'B' [], Node 'C' []]
 -- "A[BD][C]" -> Node 'A' [Node 'B' [Node 'D' []], Node 'C' []]
-testP = toS . normT $ let x = parseUnsafe wordParser "[A][BD]" in trace (show $ normT x) x
+testP =
+  toS . normT $
+  let x = parseUnsafe (wordParser $ moduleParser2 symbolParser2) "FA [ FA ] FB "
+   in trace (show $ normT x) x
 
 normT (Root [x]) = normT x
 normT (Root xs) = Root $ map normT xs
 normT (Node a ns) = Node a (map normT ns)
-normT x = x
 
-toS :: Tree Char -> String
-toS (Root cs) = intercalate "" (map (\x -> "[" <> toS x <> "]") . reverse $ cs)
-toS (Root [c]) = toS c
-toS (Node n []) = [n]
-toS (Node n [c]) = [n] <> toS c
-toS (Node n cs) = [n] <> intercalate "" (map (\x -> "[" <> toS x <> "]") . reverse $ cs)
+toS :: Show a => Tree (Module a) -> String
+toS = intercalate " " . map show . toListT moduleBracket
+
+moduleBracket = (\x -> [lbracket] <> toListT moduleBracket x <> [rbracket])
+
+toListT :: (Tree a -> [a]) -> Tree a -> [a]
+toListT f (Root [c]) = toListT f c
+toListT f (Root cs) =
+  concatMap f . reverse $ cs
+toListT f (Node n []) = [n]
+toListT f (Node n [c]) = [n] <> toListT f c
+toListT f (Node n cs) = (n:toListT f (Root cs))
+
+lbracket = Module { _moduleSymbol = "[", _moduleParams = mempty }
+rbracket = Module { _moduleSymbol = "]", _moduleParams = mempty }
 
 parens = between (char '(' <* whiteSpace) (char ')')
 
