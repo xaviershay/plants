@@ -66,13 +66,13 @@ test_run =
             n 1
             axiom "Fa(0) [ Fa(2) ] Fb(1)"
             productions [("Fa(x)" |> "Fb(y)", "Fb(y)")]
-        -- , testSystem
-        --     "Parametric basipetal propagation with guard"
-        --     "Fb(1) [ Fa(2) ] Fb(1)" $
-        --   lsystem $ do
-        --     n 1
-        --     axiom "Fa(0) [ Fb(2) ] Fb(1)"
-        --     productions [("Fa(x)" |> "Fb(y)" |: "y < 2", "Fb(y)")]
+        , testSystem
+            "Parametric basipetal propagation with guard"
+            "Fb(1) [ Fb(2) ] Fb(1)" $
+          lsystem $ do
+            n 1
+            axiom "Fa(0) [ Fb(2) ] Fb(1)"
+            productions [("Fa(x)" |> "Fb(y)" |: "y < 2", "Fb(y)")]
         ]
     , testGroup
         "Parametric"
