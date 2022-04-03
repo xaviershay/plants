@@ -52,59 +52,71 @@ table =
     ]
   ]
 
-data X a
+
+testP =
+  let MWord x = parseWordUnsafe "A [ B D ] [ C ]"
+   in trace (show $ mapTree gatherContext $ buildTreeWith (view moduleSymbol) $ x) x
+
+data TreeBuilder a
   = Child a
   | Sibling (Tree a)
   deriving (Show)
 
-testP =
-  let MWord x = parseWordUnsafe "A [ B D ] [ C ]"
-   in trace (show $ mapTree testF $ normT $ blah $ x) x
+gatherContext m parents children = (m, take 1 parents, immediates children)
+  where
+    immediates = concatMap f2
+    f2 (Root xs) = immediates xs
+    f2 (Node x _) = [x]
 
-blah :: Show a => [Module a] -> Tree (Module a)
-blah = fst . blah'
+type TreeTraverser a b = a -> [a] -> [Tree a] -> b
+
+mapTree :: TreeTraverser a b -> Tree a -> [b]
+mapTree f t = mapTree' mempty t
+  where
+    mapTree' parent (Root cs) = concatMap (mapTree' parent) . reverse $ cs
+    mapTree' parent (Node x cs) = (f x parent $ reverse cs) : mapTree' (x:parent) (Root cs)
+
+buildTreeWith :: (a -> String) -> [a] -> Tree a
+buildTreeWith mapper = fst . blah'
 
   where
-    -- f :: [Tree a1] -> [X a1] -> [Tree a1]
     f ns (Child x:rest) = (Node x (f [] rest) : ns)
     f ns (Sibling x:rest) = f (x : ns) rest
     f tree [] = tree
 
-    -- blah' :: [Module a] -> (Tree (Module a), [Module a])
     blah' ms = let (treeInstructions, remainder) = extractTree ms in
-      (Root $ f [] (trace (show treeInstructions) treeInstructions), remainder)
+      (Root $ f [] treeInstructions, remainder)
 
-    -- extractTree :: [Module a] -> ([X (Module a)], [Module a])
     extractTree [] = ([], [])
-    extractTree (m:remainder) = case view moduleSymbol m of
+    extractTree (m:remainder) = case mapper m of
                       "[" -> let (ts, rest) = blah' remainder in let (x, y) = extractTree rest in ([Sibling ts] <> x, y)
                       "]" -> ([], remainder)
                       x -> let (ts, rest) = extractTree remainder in ([Child m] <> ts, rest)
 
-moduleParser2 paramParser = do
-  symbol <- many1 symbolParser2
-  params <-
-    try (parens (paramParser <* whiteSpace) `sepBy` (char ',' >> whiteSpace)) <|>
-    pure []
-  _ <- whiteSpace
-  return $ Module {_moduleSymbol = symbol, _moduleParams = params}
-
-wordParser modParser = do
-  _ <- whiteSpace
-  trees <-
-    many1
-      ( Child <$> modParser <|>
-       (Sibling <$> (char '[' *> wordParser modParser <* char ']' <* whiteSpace)))
-  return . Root $ f [] trees
-  where
-    f :: [Tree a] -> [X a] -> [Tree a]
-    f ns (Child x:rest) = (Node x (f [] rest) : ns)
-    f ns (Sibling x:rest) = f (x : ns) rest
-    f tree [] = tree
-
-symbolParser2 = do
-  symbol <- satisfy (\x -> not $ x `elem` (" (),[]" :: String))
-  return $ symbol
+-- moduleParser2 paramParser = do
+--   symbol <- many1 symbolParser2
+--   params <-
+--     try (parens (paramParser <* whiteSpace) `sepBy` (char ',' >> whiteSpace)) <|>
+--     pure []
+--   _ <- whiteSpace
+--   return $ Module {_moduleSymbol = symbol, _moduleParams = params}
+-- 
+-- wordParser modParser = do
+--   _ <- whiteSpace
+--   trees <-
+--     many1
+--       ( Child <$> modParser <|>
+--        (Sibling <$> (char '[' *> wordParser modParser <* char ']' <* whiteSpace)))
+--   return . Root $ f [] trees
+--   where
+--     f :: [Tree a] -> [X a] -> [Tree a]
+--     f ns (Child x:rest) = (Node x (f [] rest) : ns)
+--     f ns (Sibling x:rest) = f (x : ns) rest
+--     f tree [] = tree
+-- 
+-- symbolParser2 = do
+--   symbol <- satisfy (\x -> not $ x `elem` (" (),[]" :: String))
+--   return $ symbol
 
 -- "ABC" -> Node 'A' [Node 'B' [Node 'C']]
 -- "[A]" -> Node 'A' []
@@ -131,45 +143,31 @@ symbolParser2 = do
 -- replacement = [Node 'F' [Node 'G' []]]
 -- replacement = [Node 'F' [Node 'G' []]]
 
-testF m parents children = (m, take 1 parents, immediates children)
-  where
-    immediates = concatMap f2
-    f2 (Root xs) = immediates xs
-    f2 (Node x _) = [x]
-
-type TreeTraverser a b = a -> [a] -> [Tree a] -> b
-
-mapTree :: TreeTraverser a b -> Tree a -> [b]
-mapTree f t = mapTree' mempty t
-  where
-    mapTree' parent (Root cs) = concatMap (mapTree' parent) . reverse $ cs
-    mapTree' parent (Node x cs) = (f x parent $ reverse cs) : mapTree' (x:parent) (Root cs)
-
-mapTree2 :: TreeTraverser a b -> Tree a -> Tree b
-mapTree2 f t = mapTree2' mempty t
-  where
-    --mapTree2' parent (Root cs) = concatMap (mapTree2' parent) . reverse $ cs
-    mapTree2' parent (Node x cs) = Node (f x parent $ reverse cs) (map (mapTree2' (x:parent)) cs)
+-- mapTree2 :: TreeTraverser a b -> Tree a -> Tree b
+-- mapTree2 f t = mapTree2' mempty t
+--   where
+--     --mapTree2' parent (Root cs) = concatMap (mapTree2' parent) . reverse $ cs
+--     mapTree2' parent (Node x cs) = Node (f x parent $ reverse cs) (map (mapTree2' (x:parent)) cs)
 
 normT (Root [x]) = normT x
 normT (Root xs) = Root $ map normT xs
 normT (Node a ns) = Node a (map normT ns)
 
-toS :: Show a => Tree (Module a) -> String
-toS = intercalate " " . map show . toListT moduleBracket
-
-moduleBracket = (\x -> [lbracket] <> toListT moduleBracket x <> [rbracket])
-
-toListT :: (Tree a -> [a]) -> Tree a -> [a]
-toListT f (Root [c]) = toListT f c
-toListT f (Root cs) =
-  concatMap f . reverse $ cs
-toListT f (Node n []) = [n]
-toListT f (Node n [c]) = [n] <> toListT f c
-toListT f (Node n cs) = (n:toListT f (Root cs))
-
-lbracket = Module { _moduleSymbol = "[", _moduleParams = mempty }
-rbracket = Module { _moduleSymbol = "]", _moduleParams = mempty }
+-- toS :: Show a => Tree (Module a) -> String
+-- toS = intercalate " " . map show . toListT moduleBracket
+-- 
+-- moduleBracket = (\x -> [lbracket] <> toListT moduleBracket x <> [rbracket])
+-- 
+-- toListT :: (Tree a -> [a]) -> Tree a -> [a]
+-- toListT f (Root [c]) = toListT f c
+-- toListT f (Root cs) =
+--   concatMap f . reverse $ cs
+-- toListT f (Node n []) = [n]
+-- toListT f (Node n [c]) = [n] <> toListT f c
+-- toListT f (Node n cs) = (n:toListT f (Root cs))
+-- 
+-- lbracket = Module { _moduleSymbol = "[", _moduleParams = mempty }
+-- rbracket = Module { _moduleSymbol = "]", _moduleParams = mempty }
 
 parens = between (char '(' <* whiteSpace) (char ')')
 
