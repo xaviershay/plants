@@ -13,9 +13,6 @@ import System.Random.Stateful (StatefulGen, mkStdGen, runStateGen, uniformRM)
 
 type ModuleContext = (ModuleFixed, Maybe ModuleFixed, [ModuleFixed])
 
--- testP =
---   let MWord x = "A [ B D ] [ C ]"
---    in trace (show $ mapTree gatherContext $ buildTreeWith (view moduleSymbol) $ x) x
 data TreeBuilder a
   = Child a
   | Sibling (Tree a)
