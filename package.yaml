@@ -24,6 +24,14 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+  - lens
+  - mtl
+  - unordered-containers
+  - parsec
+  - random
+  - linear
+  - blaze-svg
 
 executables:
   plants-exe:
@@ -35,13 +43,13 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - plants
+    - time
     - lens
-    - mtl
-    - unordered-containers
-    - parsec
-    - random
     - linear
-    - blaze-svg
+    # https://stackoverflow.com/a/67949236
+    when:
+    - condition: false
+      other-modules: Paths_plants
 
 tests:
   plants-test:
@@ -53,6 +61,8 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - plants
+    - lens
+    - linear
     - tasty
     - tasty-discover
     - tasty-hunit
