@@ -9,68 +9,58 @@ import Control.Lens (assign, makeLenses, over, set, view)
 import qualified Data.HashMap.Strict as M
 import Data.List (partition, tails)
 import System.Random.Stateful (StatefulGen, mkStdGen, runStateGen, uniformRM)
+import Data.Maybe (listToMaybe)
 
-type ModuleContext = ((ModuleFixed, Maybe ModuleFixed), Maybe ModuleFixed)
-
--- data Tree a = Root [Tree a] | Node a [Tree a] deriving (Show)
-
--- "ABC" -> Node 'A' [Node 'B' [Node 'C']]
--- "[A]" -> Node 'A' []
--- "[AB]C" -> Root [Node 'A' [Node 'B' []]
--- "A[B]C" -> Node 'A' [Node 'B' [], Node 'C' []]
--- "A[[B]C]D" -> Node 'A' [Node 'B' [], Node 'C' [], Node 'D' []]
--- "A[B][C]" -> Node 'A' [Node 'B' [], Node 'C' []]
--- "A[BD][C]" -> Node 'A' [Node 'B' [Node 'D' []], Node 'C' []]
+type ModuleContext = (ModuleFixed, Maybe ModuleFixed, [ModuleFixed])
 
 
--- t1 = foldl build [Root []] ("ABC" :: String)
--- --t2 = foldl build [Root []] ("A[B]C" :: String)
--- 
--- build tree '[' = (Root []:tree)
--- build (tree:Root ls:ts) ']' = (Root (tree:ls):ts)
--- build tree ']' = error $ "unhandled case: " <> show tree
--- build ts x = (Node x []:ts)
+-- testP =
+--   let MWord x = "A [ B D ] [ C ]"
+--    in trace (show $ mapTree gatherContext $ buildTreeWith (view moduleSymbol) $ x) x
 
--- t2 = runState builder "ABC"
--- 
--- builder = do
---   char <- get
--- 
---   case char of
---     "" -> Nil
---     ('[':xs)
--- data Crumb =
---     LeftCrumb Tree
---   | RightCrumb Tree
---   deriving (Show)
--- 
--- type Crumbs = [Crumb]
--- type Zipper = (Tree, Crumbs)
--- 
--- goTop :: Zipper -> Tree a
--- goTop = undefined
--- 
--- toTree :: String -> Tree Char
--- toTree = goTop $ toTree' (Nil, [])
--- 
--- toTree' :: Zipper -> String -> Zipper
--- toTree' zipper (x:xs) = toTree' (setNode x $ goLeft zipper) xs
--- toTree' (Node a lhs rhs) ("[":xs) = (Node a lhs (toTree xs))
--- toTree' node ("]":xs) = node
--- 
--- setNode :: a -> Zipper -> Zipper
--- setNode x (Nil, crumbs) = (Node x Nil Nil)
+data TreeBuilder a
+  = Child a
+  | Sibling (Tree a)
+  deriving (Show)
 
--- parent (skipping ignores)
--- 
--- nextChild or sibling
+gatherContext m parents children = (m, listToMaybe $ take 1 parents, immediates children)
+  where
+    immediates = concatMap f2
+    f2 (Root xs) = immediates xs
+    f2 (Node x _) = [x]
+
+type TreeTraverser a b = a -> [a] -> [Tree a] -> b
+
+mapTree :: TreeTraverser a b -> Tree a -> [b]
+mapTree f t = mapTree' mempty t
+  where
+    mapTree' parent (Root cs) = concatMap (mapTree' parent) . reverse $ cs
+    mapTree' parent (Node x cs) = (f x parent $ reverse cs) : mapTree' (x:parent) (Root cs)
+
+buildTreeWith :: (a -> String) -> [a] -> Tree a
+buildTreeWith mapper = fst . blah'
+
+  where
+    f ns (Child x:rest) = (Node x (f [] rest) : ns)
+    f ns (Sibling x:rest) = f (x : ns) rest
+    f tree [] = tree
+
+    blah' ms = let (treeInstructions, remainder) = extractTree ms in
+      (Root $ f [] treeInstructions, remainder)
+
+    extractTree [] = ([], [])
+    extractTree (m:remainder) = case mapper m of
+                      "[" -> let (ts, rest) = blah' remainder in let (x, y) = extractTree rest in ([Sibling ts] <> x, y)
+                      "]" -> ([], remainder)
+                      x -> let (ts, rest) = extractTree remainder in ([Child m] <> ts, rest)
 
 step :: StatefulGen g m => LSystem -> g -> m LSystem
 step system gen = do
   let MWord axiom = view lsysAxiom system
   let ignores = view lsysIgnore system
   let axiomWithContext =
-        zip (zip axiom (extractPres axiom ignores)) (extractPosts axiom ignores)
+         mapTree gatherContext . buildTreeWith (view moduleSymbol) $ axiom
+     --    zip (zip axiom (extractPres axiom ignores)) (extractPosts axiom ignores)
   parts <- mapM (findProduction system gen) axiomWithContext
   return $
     set lsysAxiom (foldl (<>) mempty . map replacementWithContext $ parts) .
@@ -150,11 +140,11 @@ eval' env (ExprOp2 Fraction a b) = eval env a / eval env b
 eval' env (ExprOp2 Exponent a b) = eval env a ** eval env b
 
 envFromContext :: Production -> ModuleContext -> Env
-envFromContext p ((l1, l2), l3) =
+envFromContext p (l1, l2, l3) =
   Env . M.fromList $
   envForLetter (Just $ view ruleLetter rule) (Just l1) <>
   envForLetter (view ruleLetterPre rule) l2 <>
-  envForLetter (view ruleLetterPost rule) l3
+  envForLetter (view ruleLetterPost rule) (headMaybe l3) -- TODO
   where
     rule = view prodRule p
     envForLetter :: Maybe ModulePattern -> Maybe ModuleFixed -> [(String, Expr)]
@@ -199,7 +189,7 @@ findProduction system gen context =
                      in (x, buildEnv x)
 
 identityProduction :: ModuleContext -> Production
-identityProduction ((l, _), _) =
+identityProduction (l, _, _) =
   Production
     { _prodRule =
         makeRule $
@@ -208,7 +198,7 @@ identityProduction ((l, _), _) =
     }
 
 matchProduction :: Env -> Production -> ModuleContext -> Bool
-matchProduction globalEnv prod context@((l, pre), post) =
+matchProduction globalEnv prod context@(l, pre, post) =
   let r = view prodRule prod
    in view (ruleLetter . moduleSymbol) r == view moduleSymbol l &&
       (case view ruleLetterPre r of
@@ -220,7 +210,7 @@ matchProduction globalEnv prod context@((l, pre), post) =
          Nothing -> True
          Just _ ->
            fmap (view moduleSymbol) (view ruleLetterPost r) ==
-           fmap (view moduleSymbol) post) &&
+           fmap (view moduleSymbol) (headMaybe post)) &&
       (case view ruleGuard r of
          MatchAll -> True
          MatchGuard op lhs rhs ->

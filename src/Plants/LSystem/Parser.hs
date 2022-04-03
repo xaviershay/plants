@@ -3,7 +3,6 @@ module Plants.LSystem.Parser
   , parseWordExprUnsafe
   , parseExprUnsafe
   , parsePatternUnsafe
-  , testP
   ) where
 
 import Plants.LSystem.Types
@@ -52,46 +51,6 @@ table =
     ]
   ]
 
-
-testP =
-  let MWord x = parseWordUnsafe "A [ B D ] [ C ]"
-   in trace (show $ mapTree gatherContext $ buildTreeWith (view moduleSymbol) $ x) x
-
-data TreeBuilder a
-  = Child a
-  | Sibling (Tree a)
-  deriving (Show)
-
-gatherContext m parents children = (m, take 1 parents, immediates children)
-  where
-    immediates = concatMap f2
-    f2 (Root xs) = immediates xs
-    f2 (Node x _) = [x]
-
-type TreeTraverser a b = a -> [a] -> [Tree a] -> b
-
-mapTree :: TreeTraverser a b -> Tree a -> [b]
-mapTree f t = mapTree' mempty t
-  where
-    mapTree' parent (Root cs) = concatMap (mapTree' parent) . reverse $ cs
-    mapTree' parent (Node x cs) = (f x parent $ reverse cs) : mapTree' (x:parent) (Root cs)
-
-buildTreeWith :: (a -> String) -> [a] -> Tree a
-buildTreeWith mapper = fst . blah'
-
-  where
-    f ns (Child x:rest) = (Node x (f [] rest) : ns)
-    f ns (Sibling x:rest) = f (x : ns) rest
-    f tree [] = tree
-
-    blah' ms = let (treeInstructions, remainder) = extractTree ms in
-      (Root $ f [] treeInstructions, remainder)
-
-    extractTree [] = ([], [])
-    extractTree (m:remainder) = case mapper m of
-                      "[" -> let (ts, rest) = blah' remainder in let (x, y) = extractTree rest in ([Sibling ts] <> x, y)
-                      "]" -> ([], remainder)
-                      x -> let (ts, rest) = extractTree remainder in ([Child m] <> ts, rest)
 
 -- moduleParser2 paramParser = do
 --   symbol <- many1 symbolParser2
