@@ -57,6 +57,30 @@ data X a
   | Sibling (Tree a)
   deriving (Show)
 
+testP =
+  let MWord x = parseWordUnsafe "A [ B D ] [ C ]"
+   in trace (show $ mapTree testF $ normT $ blah $ x) x
+
+blah :: Show a => [Module a] -> Tree (Module a)
+blah = fst . blah'
+
+  where
+    -- f :: [Tree a1] -> [X a1] -> [Tree a1]
+    f ns (Child x:rest) = (Node x (f [] rest) : ns)
+    f ns (Sibling x:rest) = f (x : ns) rest
+    f tree [] = tree
+
+    -- blah' :: [Module a] -> (Tree (Module a), [Module a])
+    blah' ms = let (treeInstructions, remainder) = extractTree ms in
+      (Root $ f [] (trace (show treeInstructions) treeInstructions), remainder)
+
+    -- extractTree :: [Module a] -> ([X (Module a)], [Module a])
+    extractTree [] = ([], [])
+    extractTree (m:remainder) = case view moduleSymbol m of
+                      "[" -> let (ts, rest) = blah' remainder in let (x, y) = extractTree rest in ([Sibling ts] <> x, y)
+                      "]" -> ([], remainder)
+                      x -> let (ts, rest) = extractTree remainder in ([Child m] <> ts, rest)
+
 moduleParser2 paramParser = do
   symbol <- many1 symbolParser2
   params <-
@@ -89,10 +113,43 @@ symbolParser2 = do
 -- "A[[B]C]D" -> Node 'A' [Node 'B' [], Node 'C' [], Node 'D' []]
 -- "A[B][C]" -> Node 'A' [Node 'B' [], Node 'C' []]
 -- "A[BD][C]" -> Node 'A' [Node 'B' [Node 'D' []], Node 'C' []]
-testP =
-  toS . normT $
-  let x = parseUnsafe (wordParser $ moduleParser2 symbolParser2) "FA [ FA ] FB "
-   in trace (show $ normT x) x
+-- testP =
+--   toS . normT $
+--   let x = parseUnsafe (wordParser $ moduleParser2 symbolParser2) "Z X Y [ A ] [ B D [ E ] ] [ C ]"
+--    in trace (show $ mapTree2 testF $ normT x) x
+-- 
+-- A B [Node 'A' [Node 'B' []]]
+-- F B [Node 'F' [Node 'B' []]]
+-- A -> F G
+-- F G B [Node 'F' [Node 'G' [Node 'B' []]]]
+-- A [ B ] C [Node 'A' [Node 'C' [], Node 'B' []]]
+-- 
+-- 
+-- F G [ B ] C [Node 'F' [Node 'G' [Node 'C' [], Node 'B' []]]]
+-- F [ G ] [ B ] C [Node 'F' [Node 'C' [], Node 'B' [], Node 'G' []]]
+-- 
+-- replacement = [Node 'F' [Node 'G' []]]
+-- replacement = [Node 'F' [Node 'G' []]]
+
+testF m parents children = (m, take 1 parents, immediates children)
+  where
+    immediates = concatMap f2
+    f2 (Root xs) = immediates xs
+    f2 (Node x _) = [x]
+
+type TreeTraverser a b = a -> [a] -> [Tree a] -> b
+
+mapTree :: TreeTraverser a b -> Tree a -> [b]
+mapTree f t = mapTree' mempty t
+  where
+    mapTree' parent (Root cs) = concatMap (mapTree' parent) . reverse $ cs
+    mapTree' parent (Node x cs) = (f x parent $ reverse cs) : mapTree' (x:parent) (Root cs)
+
+mapTree2 :: TreeTraverser a b -> Tree a -> Tree b
+mapTree2 f t = mapTree2' mempty t
+  where
+    --mapTree2' parent (Root cs) = concatMap (mapTree2' parent) . reverse $ cs
+    mapTree2' parent (Node x cs) = Node (f x parent $ reverse cs) (map (mapTree2' (x:parent)) cs)
 
 normT (Root [x]) = normT x
 normT (Root xs) = Root $ map normT xs
