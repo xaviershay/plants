@@ -1,9 +1,4 @@
-module Plants.LSystem.Parser
-  ( parseWordUnsafe
-  , parseWordExprUnsafe
-  , parseExprUnsafe
-  , parsePatternUnsafe
-  ) where
+module Plants.LSystem.Parser where
 
 import Plants.LSystem.Types
 import Plants.Prelude
@@ -69,7 +64,7 @@ symbolParser = satisfy (\x -> not $ x `elem` (" ()," :: String))
 moduleParser paramParser = do
   symbol <- many1 symbolParser
   params <-
-    try (parens (paramParser <* whiteSpace) `sepBy` (char ',' >> whiteSpace)) <|>
+    try (parens ((paramParser <* whiteSpace) `sepBy` (char ',' >> whiteSpace))) <|>
     pure []
   return $ Module {_moduleSymbol = symbol, _moduleParams = params}
 
@@ -81,6 +76,13 @@ termParser =
   whiteSpace
 
 exprSymbolParser = satisfy (\x -> not $ x `elem` (" (),+-*/^" :: String))
+
+guardParser = do
+  lhs <- exprParser
+  operator <- foldl1 (<|>) $ map (try . string) ["=", "<=", ">=", "<", ">"]
+  rhs <- exprParser
+
+  return $ MatchGuard operator lhs rhs
 
 parseUnsafe :: Parsec SourceName () a -> SourceName -> a
 parseUnsafe parser input =
@@ -104,3 +106,6 @@ parseWordExprUnsafe :: String -> MWord ModuleExpr
 parseWordExprUnsafe =
   parseUnsafe $
   MWord <$> (whiteSpace *> many (moduleParser exprParser <* whiteSpace))
+
+parseGuardUnsafe :: String -> MatchGuard
+parseGuardUnsafe = parseUnsafe (guardParser <|> pure MatchAll)
