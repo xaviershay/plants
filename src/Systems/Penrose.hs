@@ -63,9 +63,9 @@ penrose =
       ]
     productions
       [ ("a(x)", rhombusL)
-            -- For each of these four production rules: move the turtle to a
-            -- new corner, then draw the required sub-divisions at a smaller
-            -- scale.
+      -- For each of these four production rules: move the turtle to a
+      -- new corner, then draw the required sub-divisions at a smaller
+      -- scale.
       , ("dL(x)", "+ f(x / gr) | + [ " <> rhombusL <> " ] " <> diamondL)
       , ( "rL(x)"
         , "- f(x / gr / gr) | [ " <> rhombusL <> " ] f(x) - [ " <> diamondR <>
@@ -79,8 +79,8 @@ penrose =
       , ("<", "")
       , (">", "")
       , ("F", "")
-            -- , ("<" <| match "+" |> ">", "")
-            -- , ("<" <| match "-" |> ">", "")
+      , ("<" <| "+" |> ">", "")
+      , ("<" <| "-" |> ">", "")
       ]
 
 singleCharWord :: IsString a => String -> a
