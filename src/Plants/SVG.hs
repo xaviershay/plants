@@ -3,7 +3,7 @@
 
 module Plants.SVG where
 
-import Plants.LSystem
+import Plants.LSystem hiding ((<|), (|>))
 import Plants.Prelude
 import Plants.Turtle
 
@@ -11,7 +11,10 @@ import Control.Lens (assign, makeLenses, modifying, view)
 
 import Control.Monad (forM_, when)
 import Control.Monad.RWS (execRWST, get, tell)
+import Data.Foldable (toList)
 import Data.List (intercalate)
+import Data.Sequence (ViewR(..), (|>), viewr)
+import qualified Data.Sequence as S
 
 import Linear (V2(..), V3(..), (!*), (!*!))
 
@@ -41,7 +44,7 @@ makeLenses ''SVGSettings
 
 data SVGPath = SVGPath
   { _pathStart :: ProjectedPoint
-  , _pathPoints :: [ProjectedPoint]
+  , _pathPoints :: S.Seq ProjectedPoint
   , _pathStroke :: Int
   , _pathStrokeWidth :: Double
   , _pathFill :: Maybe Int
@@ -90,17 +93,15 @@ turtleToSVGPaths settings is = snd $ execRWST f () (mkSVGPath (V2 0 0)) []
         pathUnderConstruction <- get
         let pathStarted = not . null . view pathPoints $ pathUnderConstruction
         case i of
-          MovePenDown p
-           -- TODO: Use sequence instead
-           -> do
-            modifying pathPoints (\ps -> ps <> [project p])
+          MovePenDown p -> do
+            modifying pathPoints (\ps -> ps |> project p)
           _ -> do
             when pathStarted $ do
               tell [pathUnderConstruction]
-              -- TODO: Handle when path has no points
-              assign
-                pathStart
-                (head . reverse . view pathPoints $ pathUnderConstruction)
+              assign pathStart $
+                case viewr . view pathPoints $ pathUnderConstruction of
+                  _ :> lastPoint -> lastPoint
+                  _ -> view pathStart pathUnderConstruction
               assign pathPoints mempty
             case i of
               MovePenUp x -> assign pathStart . project $ x
@@ -168,7 +169,7 @@ toStyle settings path =
     toRGB n = cs !! (n `mod` length cs)
 
 pathAllPoints :: SVGPath -> [ProjectedPoint]
-pathAllPoints path = view pathStart path : view pathPoints path
+pathAllPoints path = view pathStart path : toList (view pathPoints path)
 
 bounds paths =
   let (mn, mx) =
