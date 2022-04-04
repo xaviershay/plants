@@ -9,6 +9,7 @@ import Plants.LSystem.Eval
 
 import Control.Lens (makeLenses, assign, set, view)
 import Control.Monad.State
+import Data.Foldable (toList)
 import Data.String (IsString(..))
 import qualified Data.HashMap.Strict as M
 
@@ -46,7 +47,7 @@ theta :: Double -> LSystemBuilder
 theta = assign lsysTheta
 
 ignore :: MWord ModuleFixed -> LSystemBuilder
-ignore (MWord x) = assign lsysIgnore x
+ignore (MWord x) = assign lsysIgnore . toList $ x
 
 define :: [(String, String)] -> LSystemBuilder
 define = assign lsysDefines . Env . M.map parseExprUnsafe . M.fromList

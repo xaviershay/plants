@@ -93,7 +93,7 @@ parseUnsafe parser input =
 parseWordUnsafe :: String -> MWord ModuleFixed
 parseWordUnsafe =
   parseUnsafe $
-  MWord <$> (whiteSpace *> many1 (moduleParser decimalParser <* whiteSpace))
+  mwordFromList <$> (whiteSpace *> many1 (moduleParser decimalParser <* whiteSpace))
 
 parsePatternUnsafe :: String -> ModulePattern
 parsePatternUnsafe =
@@ -105,7 +105,7 @@ parseExprUnsafe = parseUnsafe exprParser
 parseWordExprUnsafe :: String -> MWord ModuleExpr
 parseWordExprUnsafe =
   parseUnsafe $
-  MWord <$> (whiteSpace *> many (moduleParser exprParser <* whiteSpace))
+  mwordFromList <$> (whiteSpace *> many (moduleParser exprParser <* whiteSpace))
 
 parseGuardUnsafe :: String -> MatchGuard
 parseGuardUnsafe = parseUnsafe (guardParser <|> pure MatchAll)

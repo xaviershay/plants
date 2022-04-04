@@ -4,8 +4,10 @@ module Plants.LSystem.Types where
 
 import Control.Lens (makeLenses)
 import qualified Data.HashMap.Strict as M
+import Data.Foldable (toList)
 import Data.List (intercalate)
 import Data.String (IsString(..))
+import qualified Data.Sequence as S
 import Linear (V3(..))
 import Numeric (showFFloat)
 
@@ -70,19 +72,20 @@ data Tree a = Root [Tree a] | Node a [Tree a] deriving (Show)
 
 -- MWord is a newtype wrapper around a list of modules
 data MWord a =
-  MWord [a]
+  MWord (S.Seq a)
   deriving (Eq)
 
+mwordFromList = MWord . S.fromList
 unwrapMWord (MWord a) = a
 
 instance Semigroup (MWord x) where
   (MWord a) <> (MWord b) = MWord $ a <> b
 
 instance Monoid (MWord a) where
-  mempty = MWord []
+  mempty = MWord mempty
 
 instance Show a => Show (MWord a) where
-  show (MWord l) = intercalate " " $ map show l
+  show (MWord l) = intercalate " " . map show . toList $ l
 
 data Env =
   Env (M.HashMap String Expr)

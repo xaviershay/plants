@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -ex
+
+stack build --profile
+stack exec --profile -- plants-exe +RTS -p

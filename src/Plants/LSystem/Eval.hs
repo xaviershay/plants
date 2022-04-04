@@ -7,6 +7,7 @@ import Plants.Prelude
 
 import Control.Lens (assign, makeLenses, over, set, view)
 import qualified Data.HashMap.Strict as M
+import Data.Foldable (toList)
 import Data.List (partition, tails)
 import Data.Maybe (listToMaybe)
 import System.Random.Stateful (StatefulGen, mkStdGen, runStateGen, uniformRM)
@@ -22,7 +23,7 @@ step :: StatefulGen g m => LSystem -> g -> m LSystem
 step system gen = do
   let MWord axiom = view lsysAxiom system
   let ignores = view lsysIgnore system
-  let axiomContext = axiomWithContext ignores axiom
+  let axiomContext = axiomWithContext ignores (toList axiom)
   parts <- mapM (findProduction system gen) axiomContext
   return $
     set lsysAxiom (foldl (<>) mempty . map replacementWithContext $ parts) .
@@ -43,7 +44,7 @@ run system = fst $ runStateGen (mkStdGen . view lsysSeed $ system) (runM system)
 replacementWithContext :: (Production, Env) -> MWord ModuleFixed
 replacementWithContext (p, env) =
   let MWord replacementWord = view prodReplacement p
-   in MWord . map f $ replacementWord
+   in MWord . fmap f $ replacementWord
   where
     f l =
       Module
@@ -92,7 +93,7 @@ identityProduction (l, _, _) =
     { _prodRule =
         makeRule $
         Module {_moduleSymbol = view moduleSymbol l, _moduleParams = []}
-    , _prodReplacement = MWord [over moduleParams (map ExprConst) l]
+    , _prodReplacement = mwordFromList [over moduleParams (map ExprConst) l]
     }
 
 matchProduction :: Env -> Production -> ModuleContext -> [(Production, Env)]
@@ -189,5 +190,6 @@ buildTreeWith mapper = fst . buildTreeWith'
           let (ts, rest') = extractTree rest
            in ([Child m] <> ts, rest')
 
+-- TODO: Maybe adapt to use seq rather than list so don't switch types
 axiomWithContext ignores =
   mapTree (gatherContext ignores) . buildTreeWith (view moduleSymbol)
