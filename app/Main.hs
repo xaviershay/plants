@@ -30,7 +30,7 @@ renderGeometrics = do
         ]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
-      (set settingProjection isoProjection . set settingOutputDir "output/geometric-" $ default2d)
+      (set settingViewport (ViewportFixed (V2 (-10) (-10), V2 10 10)) . set settingStrokeWidth 0.1 . set settingProjection perspectiveProjection . set settingOutputDir "output/geometric-" $ default2d)
       system
       name
 

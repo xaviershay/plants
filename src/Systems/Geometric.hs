@@ -6,7 +6,7 @@ import Plants.LSystem
 
 cube =
   lsystem $ do
-    axiom "[ ' S ] '(0) [ & S ] [ \\ S ] & F + F | / S ^ S"
+    axiom "[ '(2) F(0.3) ] [ & F(0.3) ] [ + F(0.3) ] | f(0.5) + f(0.5) + ^ f(0.5) & [ ' S ] '(0) [ & s ] [ \\ s ] & f + f | / S ^ s"
     n 1
     theta 90
     productions [("S", "F + F + F + F +")]

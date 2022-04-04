@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+    "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="500.0" height="500" viewBox="-10.0 -10.0 20.0 20.0">
+    <g>
+        <rect x="-10.0" y="-10.0" width="20.0" height="20.0" fill="#CBD4C2" />
+        <path style="fill:none;stroke:#CB793A;stroke-width:0.1px;stroke-linecap:square" d="M -2.00000000000001,5.000000000000038 L -0.12499999999999983,0.3125000000000009 " />
+        <path style="fill:none;stroke:#CB793A;stroke-width:0.1px;stroke-linecap:square" d="M -2.00000000000001,5.000000000000038 L -32.00000000000009,5.000000000000028 " />
+        <path style="fill:none;stroke:#50514F;stroke-width:0.1px;stroke-linecap:square" d="M -1.9999999999999998,2.1153846153846145 L 1.8461538461538467,2.1153846153846168 L 1.8461538461538476,-1.730769230769231 L -1.999999999999999,-1.7307692307692315 L -2.0,2.115384615384614 " />
+        <path style="fill:none;stroke:#CB793A;stroke-width:0.1px;stroke-linecap:square" d="M -2.00000000000001,5.000000000000038 L -2.000000000000012,-25.000000000000103 " />
+        <path style="fill:none;stroke:#109648;stroke-width:0.1px;stroke-linecap:square" d="M -1.9999999999999984,-2.2916666666666665 L -1.9999999999999993,1.8749999999999984 L 2.166666666666666,1.875 L 2.1666666666666674,-2.291666666666666 L -1.9999999999999982,-2.291666666666667 " />
+    </g>
+</svg>

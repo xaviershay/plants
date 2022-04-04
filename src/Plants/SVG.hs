@@ -11,8 +11,8 @@ import Control.Lens (assign, makeLenses, modifying, view)
 
 import Control.Monad (forM_, when)
 import Control.Monad.RWS (execRWST, get, tell)
-import Data.Foldable (toList, intercalate, sortOn)
-import Data.List (intercalate)
+import Data.Foldable (toList)
+import Data.List (intercalate, sortOn)
 import Data.Sequence (ViewR(..), (|>), viewr)
 import qualified Data.Sequence as S
 
@@ -87,19 +87,26 @@ beta = asin (tan (30.0 / 180.0 * pi))
 isoProjection = projection3to2 isoMatrix
 
 perspectiveProjection p =
-  let (V3 x y z) = cameraRMatrix !* (p - cameraP)
-   in (V2 x y)
-  where
-    cameraP = V3 (0) 10 (-10)
-    cameraR = V3 0 0 0
-    cameraE = V3 1 1 1
-    cameraEMatrix =
-      let (V3 ex ey ez) = cameraE
-       in V3 (V3 1 0 (ex / ez)) (V3 0 1 (ey / ez)) (V3 0 0 (1 / ez))
-    cameraRMatrix =
-      let (V3 h u l) = cameraR
-       in cameraEMatrix !*! rotateU h !*! rotateL u !*! rotateH l !*! rotateL pi !*!
-          rotateU pi
+  let (V3 x y w) = cameraRMatrix !* (cameraP - p)
+   in (V2 (x / w) (y / w))
+
+cameraP = V3 2 5 2
+
+cameraR = V3 0 0 0
+
+cameraE = V3 0 0 2
+
+cameraEMatrix =
+  let (V3 ex ey ez) = cameraE
+   in V3 (V3 1 0 (ex / ez)) (V3 0 1 (ey / ez)) (V3 0 0 (1 / ez))
+
+cubePoints = [V3 1.0 1 0, V3 1 1 (-1), V3 (-1) 1 0, V3 (-1) 1 (-1)]
+
+cameraRMatrix =
+  let (V3 h u l) = cameraR
+  -- cameraEMatrix !*! rotateH l !*! rotateL u !*! rotateU h !*! rotateL pi !*!
+  --    rotateU pi
+   in cameraEMatrix !*! rotateL pi !*! rotateU pi
 
 defaultStrokeWidth = 0.1
 
@@ -120,7 +127,8 @@ emptySVGSettings =
 default2d = emptySVGSettings
 
 turtleToSVGPaths :: SVGSettings -> [Instruction] -> [SVGPath]
-turtleToSVGPaths settings is = snd $ execRWST f () (mkSVGPath (V2 0 0)) []
+turtleToSVGPaths settings is =
+  trace (show is) $ snd $ execRWST f () (mkSVGPath (project $ V3 0 0 0)) []
   where
     project = view settingProjection settings
     f = do

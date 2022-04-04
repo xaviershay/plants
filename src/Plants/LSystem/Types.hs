@@ -8,13 +8,17 @@ import Data.Foldable (toList)
 import Data.List (intercalate)
 import Data.String (IsString(..))
 import qualified Data.Sequence as S
-import Linear (V3(..))
+import Linear (V3(..), V2(..))
 import Numeric (showFFloat)
 
 showV3 v =
   let (V3 x y z) = fmap (showFFloat (Just 2)) v
    in showString "<" . x . showString " " . y . showString " " . z .
       showString ">"
+
+showV2 v =
+  let (V2 x y) = fmap (showFFloat (Just 2)) v
+   in showString "<" . x . showString " " . y . showString ">"
 
 showOrientation (V3 h u l) =
   showString "H: " . showV3 h . showString " U: " <> showV3 u <>
