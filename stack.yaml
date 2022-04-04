@@ -17,6 +17,9 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
+
+# Later resolvers don't currently work for profiling:
+#    https://gitlab.haskell.org/ghc/ghc/-/issues/21190#note_420026
 resolver: lts-18.28
 
 # User packages to be built.
