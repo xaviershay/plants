@@ -23,8 +23,8 @@ import Control.Lens
   )
 import Control.Monad.RWS hiding (Product, Sum)
 import Control.Monad.State (State(..), evalState, get, gets, modify, runState)
-import Data.Maybe (fromMaybe)
-import Linear (V3(..), (!*!), (^*), (^/), cross, norm)
+import Data.Maybe (catMaybes, fromMaybe)
+import Linear (V3(..), (!*!), (^*), (^/), cross, distance, norm)
 import Numeric (showFFloat)
 
 type Point = V3 Double
@@ -139,6 +139,40 @@ letterToInstruction '!' (Just a) = changeStroke a
 letterToInstruction '{' a = changeFill a
 letterToInstruction '}' _ = changeFill Nothing
 letterToInstruction x a = return mempty
+
+centreAndScale :: Double -> [Instruction] -> [Instruction]
+centreAndScale size is =
+  let allPoints = catMaybes . map instructionToPoint $ is
+      xs = map (\(V3 x _ _) -> x) allPoints
+      ys = map (\(V3 _ y _) -> y) allPoints
+      zs = map (\(V3 _ _ z) -> z) allPoints
+      ps = V3 xs ys zs
+      (mn, mx) =
+        if any null ps
+          then (V3 0 0 0, V3 0 0 0)
+          else (fmap minimum ps, fmap maximum ps)
+      midpoint =
+        if mx == mn
+          then (-mx)
+          else (mx - mn) / (-2)
+      longestBoundingAxis = maximum (mx - mn)
+   in map
+        (scale
+           (if longestBoundingAxis == 0
+              then 1
+              else size / longestBoundingAxis) .
+         transform midpoint)
+        is
+  where
+    instructionToPoint (MovePenDown x) = Just x
+    instructionToPoint (MovePenUp x) = Just x
+    instructionToPoint _ = Nothing
+    transform dv (MovePenDown x) = MovePenDown $ x + dv
+    transform dv (MovePenUp x) = MovePenUp $ x + dv
+    transform _ x = x
+    scale dv (MovePenDown x) = MovePenDown $ x ^* dv
+    scale dv (MovePenUp x) = MovePenUp $ x ^* dv
+    scale _ x = x
 
 -- Algorithm described on pp57
 orientToHorizon (V3 h l u) =
