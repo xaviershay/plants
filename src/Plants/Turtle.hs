@@ -142,7 +142,8 @@ letterToInstruction x a = return mempty
 
 centreAndScale :: Double -> [Instruction] -> [Instruction]
 centreAndScale size is =
-  let allPoints = catMaybes . map instructionToPoint $ is
+  let isWithOrigin = MovePenUp (V3 0 0 0):is
+      allPoints = catMaybes . map instructionToPoint $ isWithOrigin
       xs = map (\(V3 x _ _) -> x) allPoints
       ys = map (\(V3 _ y _) -> y) allPoints
       zs = map (\(V3 _ _ z) -> z) allPoints
@@ -153,8 +154,8 @@ centreAndScale size is =
           else (fmap minimum ps, fmap maximum ps)
       midpoint =
         if mx == mn
-          then (-mx)
-          else (mx - mn) / (-2)
+          then (negate mx)
+          else (mx - mn) ^/ (-2) - mn
       longestBoundingAxis = maximum (mx - mn)
    in map
         (scale
@@ -162,7 +163,7 @@ centreAndScale size is =
               then 1
               else size / longestBoundingAxis) .
          transform midpoint)
-        is
+        isWithOrigin
   where
     instructionToPoint (MovePenDown x) = Just x
     instructionToPoint (MovePenUp x) = Just x
@@ -236,8 +237,11 @@ interpretWith :: TurtleState -> LSystem -> [Instruction]
 interpretWith state system =
   let MWord axiom = view lsysAxiom system
       theta = view lsysTheta system
-   in concat $
-      fst $ evalRWS (mapM (moduleToInstruction system) axiom) theta (state, [])
+      is =
+        concat $
+        fst $
+        evalRWS (mapM (moduleToInstruction system) axiom) theta (state, [])
+   in is
 
 rotateU a = V3 (V3 (cos a) (sin a) 0) (V3 ((-1) * sin a) (cos a) 0) (V3 0 0 1)
 

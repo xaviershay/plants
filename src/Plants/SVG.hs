@@ -140,7 +140,7 @@ pathsToSVG settings paths = renderSvg svgDoc
 renderSvgToFile :: SVGSettings -> LSystem -> String -> IO ()
 renderSvgToFile settings system name = do
   let contents =
-        (pathsToSVG settings . turtleToSVGPaths settings . interpret . run)
+        (pathsToSVG settings . turtleToSVGPaths settings . centreAndScale 100 . interpret . run)
           system
   writeFile (view settingOutputDir settings <> name <> ".svg") contents
 
@@ -172,11 +172,9 @@ pathAllPoints :: SVGPath -> [ProjectedPoint]
 pathAllPoints path = view pathStart path : toList (view pathPoints path)
 
 bounds paths =
-  let (mn, mx) =
-        foldl
-          (\((V2 minX minY), (V2 maxX maxY)) pos ->
-             let (V2 x y) = pos
-              in (V2 (min minX x) (min minY y), V2 (max maxX x) (max maxY y)))
-          (V2 0 0, V2 0 0)
-          (concatMap pathAllPoints paths)
-   in (mn, mx)
+  let allPoints = concatMap pathAllPoints paths
+      xs = map (\(V2 x _) -> x) allPoints
+      ys = map (\(V2 _ y) -> y) allPoints
+   in if null xs || null ys
+        then (V2 0 0, V2 0 0)
+        else (V2 (minimum xs) (minimum ys), V2 (maximum xs) (maximum ys))

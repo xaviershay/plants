@@ -25,21 +25,21 @@ test_centreAndScale =
   testGroup
     "centreAndScale"
     [ testCase "Scales to bounding box" $
-      [MovePenDown (V3 (-50) (-50) (-50)), MovePenDown (V3 50 50 50)] @=?
-      centreAndScale 100 [MovePenDown (V3 0 0 0), MovePenDown (V3 1 1 1)]
+      [MovePenUp (V3 (-50) (-50) (-50)), MovePenDown (V3 50 50 50)] @=?
+      centreAndScale 100 [MovePenDown (V3 1 1 1)]
     , testCase "Scales based on param" $
-      [MovePenDown (V3 (-25) (-25) (-25)), MovePenDown (V3 25 25 25)] @=?
-      centreAndScale 50 [MovePenDown (V3 0 0 0), MovePenDown (V3 1 1 1)]
+      [MovePenUp (V3 (-25) (-25) (-25)), MovePenDown (V3 25 25 25)] @=?
+      centreAndScale 50 [MovePenDown (V3 1 1 1)]
     , testCase "Scale adjusts to original size" $
-      [MovePenDown (V3 (-25) (-25) (-25)), MovePenDown (V3 25 25 25)] @=?
-      centreAndScale 50 [MovePenDown (V3 0 0 0), MovePenDown (V3 10 10 10)]
+      [MovePenUp (V3 (-25) (-25) (-25)), MovePenDown (V3 25 25 25)] @=?
+      centreAndScale 50 [MovePenDown (V3 10 10 10)]
     , testCase "Scales to longest axis" $
-      [MovePenDown (V3 (-25) (-25) (-15)), MovePenDown (V3 25 25 15)] @=?
-      centreAndScale 50 [MovePenDown (V3 0 0 0), MovePenDown (V3 10 10 6)]
-    , testCase "Zero instructions" $
-      [] @=? centreAndScale 50 []
-    , testCase "Single instruction" $
-      [MovePenDown $ V3 0 0 0] @=? centreAndScale 50 [MovePenDown $ V3 1 1 1]
+      [MovePenUp (V3 (-25) (-25) (-15)), MovePenDown (V3 25 25 15)] @=?
+      centreAndScale 50 [MovePenDown (V3 10 10 6)]
+    , testCase "Zero instructions" $ [MovePenUp $ V3 0 0 0] @=? centreAndScale 50 []
+    , testCase "Translates start position" $
+      [MovePenUp $ V3 (-25) (-25) (-25), MovePenDown (V3 0 0 0), MovePenDown (V3 25 25 25)] @=?
+      centreAndScale 50 [MovePenDown $ V3 1 1 1, MovePenDown $ V3 2 2 2]
     ]
 
 test_interpret =

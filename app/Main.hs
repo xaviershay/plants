@@ -46,22 +46,18 @@ renderHonda = do
   let systems = map (\n -> ("honda-" <> show n, honda n)) [1 .. 4]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
-      (set settingOutputDir "output/plants-2d-" . set settingStrokeWidth 0.01 $
-       default2d)
+      (set settingOutputDir "output/plants-2d-" $ default2d)
       system
       name
 
 renderPenrose = do
   renderSvgWithTime
-    (set settingViewport (ViewportFixed (V2 (-5) (-5), V2 5 5)) .
-     set settingStrokeWidth 0.03 $
-     default2d)
+    (set settingViewport (ViewportFixed (V2 (-30) (-30), V2 30 30)) $ default2d)
     penroseStencil
     "penrose-stencil"
   -- Colors from https://coolors.co/ef476f-ffd166-b4e7f8-7cd5f3-e9e9ed
   renderSvgWithTime
     (set settingViewport (ViewportBoundingRect 0.05) .
-     set settingStrokeWidth 0.01 .
      set settingBackground "#7CD5F3" .
      set settingColors ["#000000", "#EF476F", "#FFD166"] $
      default2d)
