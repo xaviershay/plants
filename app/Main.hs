@@ -14,6 +14,7 @@ import Linear (V2(..))
 
 main :: IO ()
 main = do
+  renderAonoKunii
   renderExamplePlants
   renderGeometrics
   renderPlants2D
@@ -38,8 +39,7 @@ renderGeometrics = do
   forM_ systems3d $ \(name, system) -> do
     renderSvgWithTime
       (set settingViewport (ViewportFixed (V2 (-10) (-10), V2 10 10)) .
-       set settingStrokeWidth 0.1 .
-       set settingOutputDir "output/geometric-" $
+       set settingStrokeWidth 0.1 . set settingOutputDir "output/geometric-" $
        default3d)
       system
       name
@@ -56,14 +56,23 @@ renderHonda = do
   let systems = map (\n -> ("honda-" <> show n, honda n)) [1 .. 4]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
-      (set settingOutputDir "output/plants-3d-" .
-       set settingStrokeWidth 0.01 $
+      (set settingOutputDir "output/plants-3d-" . set settingStrokeWidth 0.01 $
        default3d)
       system
       name
 
-renderExamplePlants = do
+renderAonoKunii = do
+  let systems = map (\n -> ("aono-kunii-" <> show n, aonoKunii n)) [1 .. 4]
+  forM_ systems $ \(name, system) -> do
+    renderSvgWithTime
+      (set settingOutputDir "output/plants-3d-" . set settingStrokeWidth 0.01 $
+       default3d)
+      system
+      name
+
+renderExamplePlants
   -- https://coolors.co/605221-005800-006400-00bc00-008900
+ = do
   renderSvgWithTime
     (set settingOutputDir "output/plants-3d-" .
      set settingStrokeWidth 0.01 .
@@ -71,17 +80,14 @@ renderExamplePlants = do
      default3d)
     (examplePlant 1)
     "example-plant-1"
-
-  let systems = map (\n -> ("example-plant-" <> show n, examplePlant n)) [2 .. 2]
-
+  let systems =
+        map (\n -> ("example-plant-" <> show n, examplePlant n)) [2 .. 2]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
-      (set settingOutputDir "output/plants-3d-" .
-       set settingStrokeWidth 0.01 $
+      (set settingOutputDir "output/plants-3d-" . set settingStrokeWidth 0.01 $
        default3d)
       system
       name
-
 
 renderPenrose = do
   renderSvgWithTime
