@@ -70,6 +70,7 @@ test-suite plants-test
   main-is: Driver.hs
   other-modules:
       LSystem
+      SVG
       TestPrelude
       Turtle
       Paths_plants
