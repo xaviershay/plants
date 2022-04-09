@@ -5,6 +5,7 @@ import Plants.SVG
 import Systems.Geometric
 import Systems.Penrose
 import Systems.Plants2D
+import Systems.Plants3D
 
 import Control.Lens (set)
 import Control.Monad (forM_)
