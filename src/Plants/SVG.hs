@@ -112,7 +112,7 @@ defaultStrokeWidth = 0.1
 
 defaultColors :: [String]
 defaultColors =
-  ["#50514F", "#109648", "#CB793A", "#ffff00", "#8D91C7", "#000000", "#ffff00"]
+  ["#50514F", "#109648", "#CB793A", "#fffff", "#8D91C7", "#000000", "#ffff00"]
 
 emptySVGSettings =
   SVGSettings

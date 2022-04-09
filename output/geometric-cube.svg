@@ -5,8 +5,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="500.0" height="500" viewBox="-10.0 -10.0 20.0 20.0">
     <g>
         <rect x="-10.0" y="-10.0" width="20.0" height="20.0" fill="#CBD4C2" />
-        <path style="fill:none;stroke:#CB793A;stroke-width:0.1px;stroke-linecap:square" d="M 6.123233995736766e-16,5.551115123125779e-16 L 6.123233995736765e-16,3.5635615567425114e-16 " />
-        <path style="fill:none;stroke:#CB793A;stroke-width:0.1px;stroke-linecap:square" d="M 6.123233995736766e-16,5.551115123125779e-16 L -1.4999999999999984,5.55111512312578e-16 " />
+        <path style="fill:none;stroke:#50514F;stroke-width:0.1px;stroke-linecap:square" d="M 6.123233995736766e-16,5.551115123125779e-16 L 6.123233995736765e-16,3.5635615567425114e-16 " />
+        <path style="fill:none;stroke:#50514F;stroke-width:0.1px;stroke-linecap:square" d="M 6.123233995736766e-16,5.551115123125779e-16 L -1.4999999999999984,5.55111512312578e-16 " />
         <path style="fill:none;stroke:#50514F;stroke-width:0.1px;stroke-linecap:square" d="M -1.6666666666666652,1.6666666666666652 L 1.6666666666666665,1.6666666666666663 L 1.6666666666666672,-1.6666666666666659 L -1.6666666666666645,-1.6666666666666665 L -1.6666666666666654,1.6666666666666647 " />
         <path style="fill:none;stroke:#CB793A;stroke-width:0.1px;stroke-linecap:square" d="M 6.123233995736766e-16,5.551115123125779e-16 L 5.204748896376252e-16,-1.4999999999999984 " />
         <path style="fill:none;stroke:#109648;stroke-width:0.1px;stroke-linecap:square" d="M 4.999999999999995,4.9999999999999964 L 4.9999999999999964,-4.999999999999993 L -4.999999999999991,-4.999999999999994 L -4.999999999999994,4.999999999999992 L 4.999999999999994,4.999999999999997 " />

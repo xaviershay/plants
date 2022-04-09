@@ -14,6 +14,7 @@ import Linear (V2(..))
 
 main :: IO ()
 main = do
+  renderExamplePlant
   renderGeometrics
   renderPlants2D
   renderHonda
@@ -30,14 +31,10 @@ renderGeometrics = do
         ]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
-      (set settingOutputDir "output/geometric-" $
-       default2d)
+      (set settingOutputDir "output/geometric-" $ default2d)
       system
       name
-
-  let systems3d =
-        [ ("cube", cube)
-        ]
+  let systems3d = [("cube", cube)]
   forM_ systems3d $ \(name, system) -> do
     renderSvgWithTime
       (set settingViewport (ViewportFixed (V2 (-10) (-10), V2 10 10)) .
@@ -60,7 +57,16 @@ renderHonda = do
   let systems = map (\n -> ("honda-" <> show n, honda n)) [1 .. 4]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
-      (set settingOutputDir "output/plants-2d-" .
+      (set settingOutputDir "output/plants-3d-" .
+       set settingStrokeWidth 0.01 . set settingProjection perspectiveProjection $
+       default2d)
+      system
+      name
+
+renderExamplePlant =
+  forM_ [("example-plant", examplePlant)] $ \(name, system) -> do
+    renderSvgWithTime
+      (set settingOutputDir "output/plants-3d-" .
        set settingStrokeWidth 0.01 . set settingProjection perspectiveProjection $
        default2d)
       system

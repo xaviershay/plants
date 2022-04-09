@@ -36,6 +36,7 @@ library
       Systems.Geometric
       Systems.Penrose
       Systems.Plants2D
+      Systems.Plants3D
   other-modules:
       Paths_plants
   hs-source-dirs:

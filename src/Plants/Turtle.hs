@@ -115,12 +115,17 @@ letterToInstruction :: Char -> Maybe Double -> TurtleM
 letterToInstruction '[' a = push
 letterToInstruction ']' a = do
   p <- use $ peek . turtlePosition
+  c <- use $ peek . turtleColor
   pop
   p' <- use $ peek . turtlePosition
+  c' <- use $ peek . turtleColor
   return $
-    if not (p `approxEqV3` p')
+    (if not (c == c')
+      then [ChangeColor c']
+      else []) <>
+    (if not (p `approxEqV3` p')
       then [MovePenUp p']
-      else []
+      else [])
 letterToInstruction 'F' a = moveTurtle a MovePenDown
 letterToInstruction 'f' a = moveTurtle a MovePenUp
 letterToInstruction '+' a = rotateTurtle rotateU a
@@ -136,7 +141,9 @@ letterToInstruction '\'' Nothing = changeColor (+ 1)
 letterToInstruction '\'' (Just a) = changeColor (const . round $ a)
 letterToInstruction '!' Nothing = changeStroke 1.0
 letterToInstruction '!' (Just a) = changeStroke a
-letterToInstruction '{' a = changeFill a
+letterToInstruction '{' a = do
+  strokeColor <- use $ peek . turtleColor
+  changeFill ((round <$> a) <|> Just strokeColor)
 letterToInstruction '}' _ = changeFill Nothing
 letterToInstruction x a = return mempty
 
@@ -200,8 +207,7 @@ rotateTurtle r a = do
     (\x -> r (toRadians $ theta * fromMaybe 1 a) !*! x)
   return mempty
 
-changeFill a = do
-  let fillColor = round <$> a
+changeFill fillColor = do
   assign (peek . turtleFill) fillColor
   return [Fill fillColor]
 

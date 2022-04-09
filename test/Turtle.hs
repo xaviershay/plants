@@ -80,6 +80,19 @@ test_interpret =
         , Fill Nothing
         , MovePenDown (V3 2 0 0)
         ]
+    , testTurtle
+        "' { F } F"
+        [ ChangeColor 1
+        , Fill $ Just 1
+        , MovePenDown (V3 1 0 0)
+        , Fill Nothing
+        , MovePenDown (V3 2 0 0)
+        ]
+    , testTurtle
+        "[ ' ]"
+        [ ChangeColor 1
+        , ChangeColor 0
+        ]
     , testTurtle "& F" [MovePenDown (V3 0 0 (-1))]
     , testTurtle "&(3) F" [MovePenDown (V3 0 0 1)]
     , testTurtle

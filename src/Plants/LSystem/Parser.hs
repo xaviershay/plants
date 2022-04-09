@@ -4,7 +4,7 @@ import Plants.LSystem.Types
 import Plants.Prelude
 
 import Debug.Trace
-import Text.Parsec
+import Text.Parsec hiding ((<|>))
 import Text.Parsec.Expr
 import qualified Text.Parsec.Language as Tok
 import qualified Text.Parsec.Token as Tok
