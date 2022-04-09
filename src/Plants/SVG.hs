@@ -112,7 +112,7 @@ defaultStrokeWidth = 0.1
 
 defaultColors :: [String]
 defaultColors =
-  ["#50514F", "#109648", "#CB793A", "#fffff", "#8D91C7", "#000000", "#ffff00"]
+  ["#50514F", "#109648", "#CB793A", "#ffffff", "#8D91C7", "#000000", "#ffff00"]
 
 emptySVGSettings =
   SVGSettings
@@ -125,6 +125,7 @@ emptySVGSettings =
     }
 
 default2d = emptySVGSettings
+default3d = set settingProjection perspectiveProjection emptySVGSettings
 
 turtleToSVGPaths :: SVGSettings -> [Instruction] -> [SVGPath]
 turtleToSVGPaths settings is =

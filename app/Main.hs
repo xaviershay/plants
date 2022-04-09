@@ -14,7 +14,7 @@ import Linear (V2(..))
 
 main :: IO ()
 main = do
-  renderExamplePlant
+  renderExamplePlants
   renderGeometrics
   renderPlants2D
   renderHonda
@@ -39,9 +39,8 @@ renderGeometrics = do
     renderSvgWithTime
       (set settingViewport (ViewportFixed (V2 (-10) (-10), V2 10 10)) .
        set settingStrokeWidth 0.1 .
-       set settingProjection perspectiveProjection .
        set settingOutputDir "output/geometric-" $
-       default2d)
+       default3d)
       system
       name
 
@@ -58,19 +57,31 @@ renderHonda = do
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
       (set settingOutputDir "output/plants-3d-" .
-       set settingStrokeWidth 0.01 . set settingProjection perspectiveProjection $
-       default2d)
+       set settingStrokeWidth 0.01 $
+       default3d)
       system
       name
 
-renderExamplePlant =
-  forM_ [("example-plant", examplePlant)] $ \(name, system) -> do
+renderExamplePlants = do
+  -- https://coolors.co/605221-005800-006400-00bc00-008900
+  renderSvgWithTime
+    (set settingOutputDir "output/plants-3d-" .
+     set settingStrokeWidth 0.01 .
+     set settingColors ["#605221", "#005800", "#006400", "#00bc00", "#008900"] $
+     default3d)
+    (examplePlant 1)
+    "example-plant-1"
+
+  let systems = map (\n -> ("example-plant-" <> show n, examplePlant n)) [2 .. 2]
+
+  forM_ systems $ \(name, system) -> do
     renderSvgWithTime
       (set settingOutputDir "output/plants-3d-" .
-       set settingStrokeWidth 0.01 . set settingProjection perspectiveProjection $
-       default2d)
+       set settingStrokeWidth 0.01 $
+       default3d)
       system
       name
+
 
 renderPenrose = do
   renderSvgWithTime
