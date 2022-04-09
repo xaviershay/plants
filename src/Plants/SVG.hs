@@ -90,11 +90,11 @@ perspectiveProjection p =
   let (V3 x y w) = cameraRMatrix !* (cameraP - p)
    in (V2 (x / w) (y / w))
 
-cameraP = V3 2 5 2
+cameraP = V3 0 0 100
 
 cameraR = V3 0 0 0
 
-cameraE = V3 0 0 2
+cameraE = V3 0 0 5
 
 cameraEMatrix =
   let (V3 ex ey ez) = cameraE
@@ -128,7 +128,7 @@ default2d = emptySVGSettings
 
 turtleToSVGPaths :: SVGSettings -> [Instruction] -> [SVGPath]
 turtleToSVGPaths settings is =
-  trace (show is) $ snd $ execRWST f () (mkSVGPath (project $ V3 0 0 0)) []
+  snd $ execRWST f () (mkSVGPath (project $ V3 0 0 0)) []
   where
     project = view settingProjection settings
     f = do

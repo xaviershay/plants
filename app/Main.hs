@@ -14,23 +14,36 @@ import Linear (V2(..))
 main :: IO ()
 main = do
   renderGeometrics
-  --renderPlants2D
-  -- renderHonda
-  --renderPenrose
+  renderPlants2D
+  renderHonda
+  renderPenrose
 
 renderGeometrics = do
   let systems =
-        [--- ("koch-tiles", kochTiles)
-        --, ("koch-spiral", kochSpiral)
-        --, ("koch-island", kochIsland)
-        --, ("island-lakes", islandLakes)
-        --, ("dragon-curve", dragonCurve)
-        --, ("gosper-hex-curve", gosperHexCurve)
-         ("cube", cube)
+        [ ("koch-tiles", kochTiles)
+        , ("koch-spiral", kochSpiral)
+        , ("koch-island", kochIsland)
+        , ("island-lakes", islandLakes)
+        , ("dragon-curve", dragonCurve)
+        , ("gosper-hex-curve", gosperHexCurve)
         ]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
-      (set settingViewport (ViewportFixed (V2 (-10) (-10), V2 10 10)) . set settingStrokeWidth 0.1 . set settingProjection perspectiveProjection . set settingOutputDir "output/geometric-" $ default2d)
+      (set settingOutputDir "output/geometric-" $
+       default2d)
+      system
+      name
+
+  let systems3d =
+        [ ("cube", cube)
+        ]
+  forM_ systems3d $ \(name, system) -> do
+    renderSvgWithTime
+      (set settingViewport (ViewportFixed (V2 (-10) (-10), V2 10 10)) .
+       set settingStrokeWidth 0.1 .
+       set settingProjection perspectiveProjection .
+       set settingOutputDir "output/geometric-" $
+       default2d)
       system
       name
 
@@ -42,13 +55,12 @@ renderPlants2D = do
       system
       name
 
--- TODO: Render these with 3D projection (and move out of 2D system)
 renderHonda = do
   let systems = map (\n -> ("honda-" <> show n, honda n)) [1 .. 4]
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
       (set settingOutputDir "output/plants-2d-" .
-       set settingProjection perspectiveProjection $
+       set settingStrokeWidth 0.01 . set settingProjection perspectiveProjection $
        default2d)
       system
       name
