@@ -97,9 +97,13 @@ push = do
 
 pop :: TurtleM
 pop = do
-  top <- head <$> use _2
-  modifying _2 (drop 1)
-  assign _1 top
+  topMaybe <- headMaybe <$> use _2
+
+  case topMaybe of
+    Just top -> do
+      modifying _2 (drop 1)
+      assign _1 top
+    _ -> error "mismatched brackets []"
   return mempty
 
 turtleHeading :: Lens' TurtleState Point
@@ -116,17 +120,33 @@ letterToInstruction '[' a = push
 letterToInstruction ']' a = do
   p <- use $ peek . turtlePosition
   c <- use $ peek . turtleColor
+  w <- use $ peek . turtleStrokeWidth
   pop
   p' <- use $ peek . turtlePosition
   c' <- use $ peek . turtleColor
+  w' <- use $ peek . turtleStrokeWidth
   return $
     (if not (c == c')
       then [ChangeColor c']
       else []) <>
+    (if not (w == w')
+      then [StrokeWidth w']
+      else []) <>
     (if not (p `approxEqV3` p')
       then [MovePenUp p']
       else [])
-letterToInstruction 'F' a = moveTurtle a MovePenDown
+letterToInstruction 'F' a = do
+  m <- moveTurtle a MovePenDown
+  -- TODO: This isn't right, need to "undo" this and also not always assume
+  -- down tropism
+  modifying (peek . turtleOrientation) orientToHorizon
+  (V3 h _ _) <- use $  peek . turtleOrientation
+  let e = 0.2
+  let alpha = e * norm (cross h (V3 0 (-1) 0))
+  r <- rotateTurtle rotateL (Just $ toDegrees alpha)
+
+  return $ m <> r
+
 letterToInstruction 'f' a = moveTurtle a MovePenUp
 letterToInstruction '+' a = rotateTurtle rotateU a
 letterToInstruction '-' a = rotateTurtle (rotateU . negate) a

@@ -16,6 +16,7 @@ headMaybe (x:_) = Just x
 headMaybe [] = Nothing
 
 toRadians a = a / 180.0 * pi
+toDegrees a = a * 180.0 / pi
 
 traceS x = trace (show x) x
 

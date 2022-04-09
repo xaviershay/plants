@@ -14,12 +14,13 @@ import Linear (V2(..))
 
 main :: IO ()
 main = do
-  renderAonoKunii
-  renderExamplePlants
-  renderGeometrics
-  renderPlants2D
-  renderHonda
-  renderPenrose
+  renderTernary
+--  renderAonoKunii
+--  renderExamplePlants
+--  renderGeometrics
+--  renderPlants2D
+--  renderHonda
+--  renderPenrose
 
 renderGeometrics = do
   let systems =
@@ -66,6 +67,15 @@ renderAonoKunii = do
   forM_ systems $ \(name, system) -> do
     renderSvgWithTime
       (set settingOutputDir "output/plants-3d-" . set settingStrokeWidth 0.01 $
+       default3d)
+      system
+      name
+
+renderTernary = do
+  let systems = map (\n -> ("ternary-" <> show n, ternary n)) [1 .. 4]
+  forM_ systems $ \(name, system) -> do
+    renderSvgWithTime
+      (set settingOutputDir "output/plants-3d-" . set settingStrokeWidth 0.003 $
        default3d)
       system
       name

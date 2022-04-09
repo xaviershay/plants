@@ -93,6 +93,11 @@ test_interpret =
         [ ChangeColor 1
         , ChangeColor 0
         ]
+    , testTurtle
+        "[ !(0.5) ]"
+        [ StrokeWidth 0.5
+        , StrokeWidth 1.0
+        ]
     , testTurtle "& F" [MovePenDown (V3 0 0 (-1))]
     , testTurtle "&(3) F" [MovePenDown (V3 0 0 1)]
     , testTurtle

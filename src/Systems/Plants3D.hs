@@ -89,3 +89,25 @@ aonoKuniiSystem r1 r2 a1 a2 = lsystem $ do
     , ( "B(l, w)"
       , "!(w) F(l) [ +(a1) $ B(l*r1, w*wr) ] [ -(a2) $ B(l*r2, w*wr) ]")
     ]
+
+ternary 1 = ternarySystem 94.74 132.63 18.95 1.109 6
+ternary 2 = ternarySystem 137.50 137.50 18.95 1.109 6
+ternary 3 = ternarySystem 112.50 157.50 22.50 1.790 6
+ternary 4 = ternarySystem 180 252 36 1.070 6
+
+ternarySystem d1 d2 a lr iterations = lsystem $ do
+  n iterations
+  theta 1
+  axiom "!(1) F(200) /(45) A"
+  define
+    [ ("d1", showFullPrecision d1)
+    , ("d2", showFullPrecision d2)
+    , ("a", showFullPrecision a)
+    , ("lr", showFullPrecision lr)
+    , ("vr", "1.723")
+    ]
+  productions
+    [ ("A", "!(vr) F(50) [ &(a) F(50) A ] /(d1) [ &(a) F(50) A ] /(d2) [ &(a) F(50) A ]")
+    , ("F(l)", "F(l*lr)")
+    , ("!(w)", "!(w*vr)")
+    ]

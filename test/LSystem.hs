@@ -128,5 +128,10 @@ test_run =
             n 2
             axiom "a(1) a(2)"
             productions [("a(x)", "c(x)"), ("a(x)" |: "x <= 1", "b")]
+        , testSystem "Recursive substitution" "!(4) !(2) !(1) A" $
+          lsystem $ do
+            n 3
+            axiom "A"
+            productions [("A", "!(1) A"), ("!(w)", "!(w*2)")]
         ]
     ]
